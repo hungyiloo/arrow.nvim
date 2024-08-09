@@ -17,6 +17,9 @@ M.commands = {
 	open = function()
 		ui.openMenu()
 	end,
+	open_buffer = function()
+		buffer_ui.openMenu()
+	end,
 	next_buffer_bookmark = function()
 		local cur_buffer = vim.api.nvim_get_current_buf()
 		local cur_line = vim.api.nvim_win_get_cursor(0)[1]
