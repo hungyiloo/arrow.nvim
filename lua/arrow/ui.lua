@@ -49,86 +49,31 @@ local function getActionsMenu()
 end
 
 local function format_file_names(file_names)
-	local full_path_list = config.getState("full_path_list")
 	local formatted_names = {}
 
-	-- Table to store occurrences of file names (tail)
+	-- Table to count occurrences of file names
 	local name_occurrences = {}
 
-	for _, full_path in ipairs(file_names) do
-		local tail = vim.fn.fnamemodify(full_path, ":t:r") -- Get the file name without extension
-
-		if vim.fn.isdirectory(full_path) == 1 then
-			local parsed_path = full_path
-
-			if parsed_path:sub(#parsed_path, #parsed_path) == "/" then
-				parsed_path = parsed_path:sub(1, #parsed_path - 1)
-			end
-
-			local splitted_path = vim.split(parsed_path, "/")
-			local folder_name = splitted_path[#splitted_path]
-
-			if name_occurrences[folder_name] then
-				table.insert(name_occurrences[folder_name], full_path)
-			else
-				name_occurrences[folder_name] = { full_path }
-			end
-		else
-			if not name_occurrences[tail] then
-				name_occurrences[tail] = { full_path }
-			else
-				table.insert(name_occurrences[tail], full_path)
-			end
+	local function get_file_name(full_path)
+		local file_name = vim.fn.fnamemodify(full_path, ":t")
+		if file_name == "" then
+			file_name = full_path
 		end
+		return file_name
 	end
 
 	for _, full_path in ipairs(file_names) do
-		local tail = vim.fn.fnamemodify(full_path, ":t:r")
-		local tail_with_extension = vim.fn.fnamemodify(full_path, ":t")
+		local file_name = get_file_name(full_path)
+		name_occurrences[file_name] = (name_occurrences[file_name] or 0) + 1
+	end
 
-		if vim.fn.isdirectory(full_path) == 1 then
-			if not (string.sub(full_path, #full_path, #full_path) == "/") then
-				full_path = full_path .. "/"
-			end
-
-			local path = vim.fn.fnamemodify(full_path, ":h")
-
-			local display_path = path
-
-			local splitted_path = vim.split(display_path, "/")
-
-			if #splitted_path > 1 then
-				local folder_name = splitted_path[#splitted_path]
-
-				local location = vim.fn.fnamemodify(full_path, ":h:h")
-
-				if #name_occurrences[folder_name] > 1 or config.getState("always_show_path") then
-					table.insert(formatted_names, string.format("%s . %s", folder_name .. "/", location))
-				else
-					table.insert(formatted_names, string.format("%s", folder_name .. "/"))
-				end
-			else
-				if config.getState("always_show_path") then
-					table.insert(formatted_names, full_path .. " . /")
-				else
-					table.insert(formatted_names, full_path)
-				end
-			end
-		elseif
-			not (config.getState("always_show_path"))
-			and #name_occurrences[tail] == 1
-			and not (vim.tbl_contains(full_path_list, tail))
-		then
-			table.insert(formatted_names, tail_with_extension)
+	for _, full_path in ipairs(file_names) do
+		local file_name = get_file_name(full_path)
+		local dir_name = vim.fn.fnamemodify(full_path, ":h")
+		if file_name ~= full_path and (name_occurrences[file_name] > 1 or config.getState("always_show_path")) then
+			table.insert(formatted_names, string.format("%s  (%s)", file_name, dir_name))
 		else
-			local path = vim.fn.fnamemodify(full_path, ":h")
-			local display_path = path
-
-			if vim.tbl_contains(full_path_list, tail) then
-				display_path = vim.fn.fnamemodify(full_path, ":h")
-			end
-
-			table.insert(formatted_names, string.format("%s . %s", tail_with_extension, display_path))
+			table.insert(formatted_names, string.format("%s", file_name))
 		end
 	end
 
@@ -294,15 +239,15 @@ local function render_highlights(buffer)
 		end
 	end
 
-	local pattern = " %. .-$"
+	local pattern = "  %(.-%)$"
 	local line_number = 1
 
 	while line_number <= #fileNames + 1 do
 		local line_content = vim.api.nvim_buf_get_lines(menuBuf, line_number - 1, line_number, false)[1]
 
 		local match_start, match_end = string.find(line_content, pattern)
-		if match_start then
-			vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", line_number - 1, match_start - 1, match_end)
+		if match_start and match_end then
+			vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowLocation", line_number - 1, match_start - 1, match_end)
 		end
 
 		line_number = line_number + 1
@@ -341,7 +286,7 @@ function M.openFile(fileNumber)
 
 		closeMenu()
 
-    action(fileName, vim.b.filename)
+		action(fileName, vim.b.filename)
 	end
 end
 

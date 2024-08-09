@@ -15,6 +15,7 @@ function M.setup(opts)
 	vim.cmd("highlight default link ArrowFileIndex CursorLineNr")
 	vim.cmd("highlight default link ArrowCurrentFile SpecialChar")
 	vim.cmd("highlight default link ArrowAction Character")
+	vim.cmd("highlight default link ArrowLocation Comment")
 	vim.cmd("highlight default link ArrowDeleteMode DiagnosticError")
 
 	opts = opts or {}
@@ -111,75 +112,7 @@ function M.setup(opts)
 		end
 	end
 
-	local default_full_path_list = {
-		"index",
-		"main",
-		"create",
-		"update",
-		"upgrade",
-		"edit",
-		"new",
-		"delete",
-		"list",
-		"view",
-		"show",
-		"form",
-		"controller",
-		"service",
-		"util",
-		"utils",
-		"config",
-		"constants",
-		"consts",
-		"test",
-		"spec",
-		"handler",
-		"route",
-		"router",
-		"run",
-		"execute",
-		"start",
-		"stop",
-		"setup",
-		"cleanup",
-		"init",
-		"launch",
-		"load",
-		"save",
-		"read",
-		"write",
-		"validate",
-		"process",
-		"handle",
-		"parse",
-		"format",
-		"generate",
-		"render",
-		"authenticate",
-		"authorize",
-		"validate",
-		"search",
-		"filter",
-		"sort",
-		"paginate",
-		"export",
-		"import",
-		"download",
-		"upload",
-		"submit",
-		"cancel",
-		"approve",
-		"reject",
-		"send",
-		"receive",
-		"notify",
-		"enable",
-		"disable",
-		"reset",
-	}
-
 	config.setState("mappings", utils.join_two_keys_tables(default_mappings, opts.mappings or {}))
-	config.setState("full_path_list", utils.join_two_arrays(default_full_path_list, opts.full_path_list or {}))
 
 	persist.load_cache_file()
 
