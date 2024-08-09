@@ -54,7 +54,7 @@ function M.setup(opts)
 		utils.join_two_keys_tables(default_per_buffer_config, opts.per_buffer_config or {})
 	)
 
-	local leader_key = opts.leader_key or ";"
+	local leader_key = opts.leader_key
 	local buffer_leader_key = opts.buffer_leader_key
 
 	local actions = opts.custom_actions or {}

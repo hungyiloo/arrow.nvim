@@ -443,7 +443,10 @@ function M.openMenu(bufnr)
 
 	local menuKeymapOpts = { noremap = true, silent = true, buffer = menuBuf, nowait = true }
 
-	vim.keymap.set("n", config.getState("leader_key"), closeMenu, menuKeymapOpts)
+	local leader_key = config.getState("leader_key")
+	if leader_key then
+		vim.keymap.set("n", leader_key, closeMenu, menuKeymapOpts)
+	end
 
 	local buffer_leader_key = config.getState("buffer_leader_key")
 	if buffer_leader_key then
