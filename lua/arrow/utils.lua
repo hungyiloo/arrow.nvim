@@ -118,16 +118,7 @@ end
 function M.get_buffer_path(bufnr)
 	local bufname = vim.fn.bufname(bufnr)
 	local absolute_buffer_path = vim.fn.fnamemodify(bufname, ":p")
-
-	local save_key = config.getState("save_key_cached") or config.getState("save_key")()
-	local escaped_save_key = save_key:gsub("[%(%)%.%%%+%-%*%?%[%]%^%$]", "%%%1")
-
-	if absolute_buffer_path:find("^" .. escaped_save_key .. "/") then
-		local relative_path = absolute_buffer_path:gsub("^" .. escaped_save_key .. "/", "")
-		return relative_path
-	else
-		return absolute_buffer_path
-	end
+  return absolute_buffer_path
 end
 
 function M.string_contains_whitespace(str)
