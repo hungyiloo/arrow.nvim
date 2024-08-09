@@ -78,6 +78,7 @@ end
 function M.normalize_path_to_filename(path)
 	if vim.fn.has("win32") then
 		path = path:gsub("\\", "/")
+		path = path:gsub(":", "/")
 	end
 	return path:gsub("/", "_")
 end
