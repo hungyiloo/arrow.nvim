@@ -72,7 +72,7 @@ function M.load_buffer_bookmarks(bufnr)
     return
   end
 
-  local path = M.cache_file_path(vim.fn.expand("%:p"))
+  local path = M.cache_file_path(utils.get_buffer_path(bufnr))
 
   if vim.fn.filereadable(path) == 0 then
     M.local_bookmarks[bufnr] = {}
@@ -177,6 +177,7 @@ function M.clear(bufnr)
 end
 
 function M.update(bufnr)
+  M.load_buffer_bookmarks(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   local line_count = vim.api.nvim_buf_line_count(bufnr)
   local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, ns, { 0, 0 }, { -1, -1 }, {})
