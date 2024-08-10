@@ -71,7 +71,7 @@ local function format_file_names(file_names)
     local file_name = get_file_name(full_path)
     local dir_name = vim.fn.fnamemodify(full_path, ":h")
     if file_name ~= full_path and (name_occurrences[file_name] > 1 or config.getState("always_show_path")) then
-      table.insert(formatted_names, string.format("%s  (%s)", file_name, dir_name))
+      table.insert(formatted_names, string.format("%s    %s", file_name, dir_name))
     else
       table.insert(formatted_names, string.format("%s", file_name))
     end
@@ -239,7 +239,7 @@ local function render_highlights(buffer)
     end
   end
 
-  local pattern = "  %(.-%)$"
+  local pattern = "%s%s%s%s%S.*$"
   local line_number = 1
 
   while line_number <= #fileNames + 1 do
