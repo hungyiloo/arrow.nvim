@@ -3,7 +3,7 @@ local M = {}
 local preview_buffers = {}
 
 local config = require("arrow.config")
-local persist = require("arrow.buffer_persist")
+local buffer_persist = require("arrow.buffer_persist")
 
 local lastRow = 0
 local has_current_line = false
@@ -15,16 +15,16 @@ local to_delete = {}
 local spawn_col = -1
 
 local function update_everything(bufnr)
-  persist.update(bufnr)
-  persist.clear_buffer_ext_marks(bufnr)
-  persist.redraw_bookmarks(bufnr, persist.get_bookmarks_by(bufnr))
-  persist.sync_buffer_bookmarks(bufnr)
+  buffer_persist.update(bufnr)
+  buffer_persist.clear_buffer_ext_marks(bufnr)
+  buffer_persist.redraw_bookmarks(bufnr, buffer_persist.get_bookmarks_by(bufnr))
+  buffer_persist.sync_buffer_bookmarks(bufnr)
 end
 
 vim.api.nvim_create_autocmd({ "BufLeave", "BufWritePost" }, {
   callback = function(args)
     local bufnr = tonumber(args.buf)
-    if persist.get_bookmarks_by(bufnr) ~= nil then
+    if buffer_persist.get_bookmarks_by(bufnr) ~= nil then
       update_everything(bufnr)
     end
   end,
@@ -179,7 +179,7 @@ local function delete_marks_from_delete_mode(call_buffer)
   local reversely_sorted_to_delete = vim.fn.reverse(vim.fn.sort(to_delete))
 
   for _, index in ipairs(reversely_sorted_to_delete) do
-    persist.remove(index, call_buffer)
+    buffer_persist.remove(index, call_buffer)
   end
 end
 
@@ -191,8 +191,8 @@ local function after_close(call_buffer)
 
   reset_variables()
 
-  persist.clear_buffer_ext_marks(call_buffer)
-  persist.redraw_bookmarks(call_buffer, persist.get_bookmarks_by(call_buffer))
+  buffer_persist.clear_buffer_ext_marks(call_buffer)
+  buffer_persist.redraw_bookmarks(call_buffer, buffer_persist.get_bookmarks_by(call_buffer))
 end
 
 local function closeMenu(actions_buffer, call_buffer)
@@ -237,7 +237,7 @@ function M.next_item(bufnr, line_nr)
 
   update_everything(bufnr)
 
-  local bookmarks = persist.get_bookmarks_by(bufnr) or {}
+  local bookmarks = buffer_persist.get_bookmarks_by(bufnr) or {}
 
   if #bookmarks == 0 then
     return
@@ -263,7 +263,7 @@ function M.prev_item(bufnr, line_nr)
 
   update_everything(bufnr)
 
-  local bookmarks = persist.get_bookmarks_by(bufnr) or {}
+  local bookmarks = buffer_persist.get_bookmarks_by(bufnr) or {}
 
   if #bookmarks == 0 then
     return
@@ -285,16 +285,16 @@ end
 function M.toggle_line(call_buffer, line_nr, col_nr)
   local is_saved
 
-  for i, bookmark in ipairs(persist.get_bookmarks_by(call_buffer)) do
+  for i, bookmark in ipairs(buffer_persist.get_bookmarks_by(call_buffer)) do
     if bookmark.line == line_nr then
       is_saved = i
     end
   end
 
   if is_saved ~= nil then
-    persist.remove(is_saved, call_buffer)
+    buffer_persist.remove(is_saved, call_buffer)
   else
-    persist.save(call_buffer, line_nr, col_nr)
+    buffer_persist.save(call_buffer, line_nr, col_nr)
   end
 end
 
@@ -368,7 +368,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
   end
 
   vim.keymap.set("n", mappings.clear_all_items, function()
-    persist.clear(call_buffer)
+    buffer_persist.clear(call_buffer)
     closeMenu(actions_buffer, call_buffer)
   end, menuKeymapOpts)
 
@@ -380,12 +380,12 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
 
   if not has_current_line then
     vim.keymap.set("n", mappings.toggle, function()
-      persist.save(call_buffer, line_nr, col_nr)
+      buffer_persist.save(call_buffer, line_nr, col_nr)
       closeMenu(actions_buffer, call_buffer)
     end, menuKeymapOpts)
   else
     vim.keymap.set("n", mappings.toggle, function()
-      persist.remove(current_line_index, call_buffer)
+      buffer_persist.remove(current_line_index, call_buffer)
       closeMenu(actions_buffer, call_buffer)
     end, menuKeymapOpts)
   end
@@ -437,10 +437,10 @@ end
 
 function M.openMenu(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-  persist.update()
-  persist.sync_buffer_bookmarks()
-  persist.redraw_bookmarks(bufnr, persist.get_bookmarks_by(bufnr))
-  local bookmarks = persist.get_bookmarks_by()
+  buffer_persist.update()
+  buffer_persist.sync_buffer_bookmarks()
+  buffer_persist.redraw_bookmarks(bufnr, buffer_persist.get_bookmarks_by(bufnr))
+  local bookmarks = buffer_persist.get_bookmarks_by()
 
   if not bookmarks then
     bookmarks = {}
