@@ -351,6 +351,7 @@ function M.getWindowConfig()
   return res
 end
 
+---@type fun(bufnr?: integer)
 function M.openMenu(bufnr)
   git.refresh_git_branch()
 

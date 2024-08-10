@@ -1,6 +1,5 @@
 local M = {}
 
-local buffer_ui = require("arrow.buffer_ui")
 local commands = require("arrow.commands")
 local config = require("arrow.config")
 local git = require("arrow.git")
@@ -75,10 +74,14 @@ function M.setup(opts)
   commands.setup()
 end
 
----@type fun(bufnr?: integer)
-M.open = ui.openMenu
+M.open = commands.commands.open
+M.next_buffer = commands.commands.next_buffer
+M.prev_buffer = commands.commands.prev_buffer
+M.save_current_buffer = commands.commands.save_current_buffer
 
----@type fun(bufnr?: integer)
-M.open_buffer = buffer_ui.openMenu
+M.open_bookmarks = commands.commands.open_bookmarks
+M.next_bookmark = commands.commands.next_bookmark
+M.prev_bookmark = commands.commands.prev_bookmark
+M.bookmark_current_line = commands.commands.bookmark_current_line
 
 return M

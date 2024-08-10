@@ -1,15 +1,18 @@
 local buffer_persist = require("arrow.buffer_persist")
 local buffer_ui = require("arrow.buffer_ui")
+local persist = require("arrow.persist")
 local ui = require("arrow.ui")
+local utils = require("arrow.utils")
 
 local M = {}
 
-function M.cmd(cmd, opts)
+function M.cmd(cmd)
+  cmd = (cmd ~= nil and cmd ~= "") and cmd or "open"
   local command = M.commands[cmd]
   if command then
-    command(opts)
+    command()
   else
-    M.error("unknown command: " .. cmd, { title = "Arrow" })
+    M.error("Unknown arrow command: " .. cmd, { title = "Arrow" })
   end
 end
 
@@ -17,22 +20,32 @@ M.commands = {
   open = function()
     ui.openMenu()
   end,
-  open_buffer = function()
+  next_buffer = function()
+    persist.next()
+  end,
+  prev_buffer = function()
+    persist.previous()
+  end,
+  save_current_buffer = function()
+    local filename = utils.get_current_buffer_path()
+    persist.save(filename)
+  end,
+  open_bookmarks = function()
     buffer_ui.openMenu()
   end,
-  next_buffer_bookmark = function()
+  next_bookmark = function()
     local cur_buffer = vim.api.nvim_get_current_buf()
     local cur_line = vim.api.nvim_win_get_cursor(0)[1]
 
     buffer_ui.next_item(cur_buffer, cur_line)
   end,
-  prev_buffer_bookmark = function()
+  prev_bookmark = function()
     local cur_buffer = vim.api.nvim_get_current_buf()
     local cur_line = vim.api.nvim_win_get_cursor(0)[1]
 
     buffer_ui.prev_item(cur_buffer, cur_line)
   end,
-  toggle_current_line_for_buffer = function()
+  bookmark_current_line = function()
     local cur_buffer = vim.api.nvim_get_current_buf()
     local cur_line = vim.api.nvim_win_get_cursor(0)[1]
     local cur_col = vim.api.nvim_win_get_cursor(0)[2]
@@ -44,17 +57,12 @@ M.commands = {
     buffer_persist.clear_buffer_ext_marks(cur_buffer)
     buffer_persist.redraw_bookmarks(cur_buffer, buffer_persist.get_bookmarks_by(cur_buffer))
   end,
-  inspectOpts = function(opts)
-    print(vim.inspect(opts))
-  end,
 }
 
 function M.setup()
   vim.api.nvim_create_user_command("Arrow", function(cmd)
-    local opts = {}
-    local prefix = M.parse(cmd.args)
-
-    M.cmd(prefix, opts)
+    local arrow_command = M.parse(cmd.args)
+    M.cmd(arrow_command)
   end, {
     nargs = "?",
     desc = "Arrow",

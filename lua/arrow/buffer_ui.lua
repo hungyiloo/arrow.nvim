@@ -435,6 +435,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
   render_highlights(actions_buffer)
 end
 
+---@type fun(bufnr?: integer)
 function M.openMenu(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
   buffer_persist.update()
