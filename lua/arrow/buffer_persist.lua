@@ -59,6 +59,8 @@ function M.redraw_bookmarks(bufnr, result)
 end
 
 function M.load_buffer_bookmarks(bufnr)
+  bufnr = bufnr or vim.api.nvim_get_current_buf()
+
   -- return if already loaded
   if M.local_bookmarks[bufnr] ~= nil then
     return
@@ -69,8 +71,6 @@ function M.load_buffer_bookmarks(bufnr)
   then
     return
   end
-
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
 
   local path = M.cache_file_path(vim.fn.expand("%:p"))
 
