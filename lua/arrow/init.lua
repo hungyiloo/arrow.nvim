@@ -38,7 +38,7 @@ function M.setup(opts)
   config.global_bookmarks = opts.global_bookmarks ~= nil and opts.global_bookmarks or config.global_bookmarks
   config.separate_save_and_remove = opts.separate_save_and_remove ~= nil and opts.separate_save_and_remove
     or config.separate_save_and_remove
-  config.save_key = save_keys[opts.save_key] or save_keys.cwd
+  config.save_key = opts.save_key ~= nil and (save_keys[opts.save_key] or opts.save_key) or config.save_key
 
   if config.leader_key then
     vim.keymap.set("n", config.leader_key, ui.openMenu, { noremap = true, silent = true, nowait = true })

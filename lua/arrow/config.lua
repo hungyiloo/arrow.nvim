@@ -64,4 +64,9 @@ M.save_path = function()
   return vim.fn.stdpath("cache") .. "/arrow"
 end
 
+---@type fun(): string
+M.save_key = function ()
+  return vim.uv.cwd() or ""
+end
+
 return M
