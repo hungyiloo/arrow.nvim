@@ -10,10 +10,10 @@ local utils = require("arrow.utils")
 
 function M.setup(opts)
   vim.cmd("highlight default link ArrowFileIndex CursorLineNr")
-  vim.cmd("highlight default link ArrowCurrentFile SpecialChar")
-  vim.cmd("highlight default link ArrowAction Character")
+  vim.cmd("highlight default link ArrowCurrentFile Special")
+  vim.cmd("highlight default link ArrowAction String")
   vim.cmd("highlight default link ArrowLocation Comment")
-  vim.cmd("highlight default link ArrowDeleteMode DiagnosticError")
+  vim.cmd("highlight default link ArrowDeleteMode Error")
 
   opts = opts or {}
 
