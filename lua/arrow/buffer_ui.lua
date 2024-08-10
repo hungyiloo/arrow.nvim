@@ -466,7 +466,7 @@ function M.openMenu(bufnr)
     M.spawn_preview_window(opt[1], opt[2], opt[3], #bookmarks)
   end
 
-  M.spawn_action_windows(bufnr, bookmarks, line_nr, col_nr, cur_win)
+  M.spawn_action_windows(bufnr, bookmarks, line_nr, col_nr, call_win)
 end
 
 return M
