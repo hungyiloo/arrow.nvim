@@ -90,10 +90,10 @@ function M.spawn_preview_window(buffer, index, bookmark, bookmark_count)
     extra_title = "(Current)"
   end
 
-  vim.api.nvim_win_set_option(win, "scrolloff", 999)
+  vim.api.nvim_set_option_value("scrolloff", 999, { win = win })
   vim.api.nvim_win_set_cursor(win, { bookmark.line, 0 })
   vim.api.nvim_win_set_config(win, { title = displayIndex .. " " .. extra_title })
-  vim.api.nvim_win_set_option(win, "number", true)
+  vim.api.nvim_set_option_value("number", true, { win = win })
 
   table.insert(preview_buffers, { buffer = buffer, win = win, index = index })
 
@@ -102,7 +102,7 @@ function M.spawn_preview_window(buffer, index, bookmark, bookmark_count)
     local shift = ctx_config.line_shift_down
 
     local win_view = vim.fn.winsaveview()
-    vim.api.nvim_win_set_option(win, "scrolloff", 0)
+    vim.api.nvim_set_option_value("scrolloff", 0, { win = win })
     vim.fn.winrestview({ topline = win_view.topline - shift })
 
     local ok, _ = pcall(require, "treesitter-context")
@@ -223,8 +223,8 @@ local function toggle_delete_mode(action_buffer)
   else
     delete_mode = true
 
-    current_highlight = vim.api.nvim_get_hl_by_name("FloatBorder", true)
-    local arrow_delete_mode = vim.api.nvim_get_hl_by_name("ArrowDeleteMode", true)
+    current_highlight = vim.api.nvim_get_hl(0, { name = "FloatBorder" })
+    local arrow_delete_mode = vim.api.nvim_get_hl(0, { name = "ArrowDeleteMode" })
 
     vim.api.nvim_set_hl(0, "FloatBorder", { fg = arrow_delete_mode.bg or "red" })
   end
@@ -337,7 +337,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
 
   local menuKeymapOpts = { noremap = true, silent = true, buffer = actions_buffer, nowait = true }
 
-  vim.api.nvim_buf_set_option(actions_buffer, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = actions_buffer })
 
   vim.api.nvim_buf_set_lines(actions_buffer, 0, -1, false, lines)
 

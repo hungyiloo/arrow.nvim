@@ -98,7 +98,7 @@ local function get_file_icon(file_name)
 end
 
 local function renderBuffer(buffer)
-  vim.api.nvim_buf_set_option(buffer, "modifiable", true)
+  vim.api.nvim_set_option_value("modifiable", true, { buf = buffer })
 
   local icons = config.getState("show_icons")
   local buf = buffer or vim.api.nvim_get_current_buf()
@@ -160,8 +160,8 @@ local function renderBuffer(buffer)
   table.insert(lines, "")
 
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_buf_set_option(buf, "modifiable", false)
-  vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
+  vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+  vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
 end
 
 -- Function to create the menu buffer with a list format
