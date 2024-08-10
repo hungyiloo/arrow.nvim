@@ -121,15 +121,15 @@ function M.sync_buffer_bookmarks(bufnr)
     vim.fn.mkdir(path_dir, "p")
   end
 
-  local file = io.open(path, "w")
-
-  if file then
-    if M.local_bookmarks[bufnr] == nil or #M.local_bookmarks[bufnr] == 0 then
-      file:write("[]")
-    else
+  if M.local_bookmarks[bufnr] == nil or #M.local_bookmarks[bufnr] == 0 then
+    vim.fn.filereadable(path)
+    os.remove(path)
+  else
+    local file = io.open(path, "w")
+    if file then
       file:write(json.encode(M.local_bookmarks[bufnr]))
+      file:flush()
     end
-    file:flush()
 
     M.last_sync_bookmarks[bufnr] = M.local_bookmarks[bufnr]
     notify()
