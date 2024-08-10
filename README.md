@@ -1,12 +1,15 @@
 # arrow.nvim
 
-Arrow.nvim is a plugin made to bookmarks files (like harpoon) using a single UI (and single keymap). 
+> [!warning] A wild fork has appeared!
+> This is a personal fork of the original [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim). To fix Windows compatibility and a whole raft of bugs, I made sweeping changes
 
-Arrow can be customized for everyone needs.
+Arrow.nvim is a plugin made to quickly locate files (like harpoon) using a single UI and single keymap. 
 
-Arrow also provides per buffer bookmarks that will can quickly jump to them. (And their position is automatically updated / persisted while you modify the file)
+Arrow is highly customizable.
 
-### Per Project / Global bookmarksL:
+Arrow also provides per buffer bookmarks that let you quickly jump around a file. (Their positions are automatically updated/persisted while you modify the file)
+
+### Per Project / Global bookmarks:
 ![arrow.nvim](https://i.imgur.com/mPdSC5s.png)
 ![arrow.nvim_gif](https://i.imgur.com/LcvG406.gif)
 ![arrow_buffers](https://i.imgur.com/Lll9YvY.gif)
@@ -17,41 +20,34 @@ Arrow also provides per buffer bookmarks that will can quickly jump to them. (An
 
 ```lua
 return {
-  "otavioschwanck/arrow.nvim",
+  "hungyiloo/arrow.nvim",
   opts = {
     show_icons = true,
-    leader_key = ';', -- Recommended to be a single key
-    buffer_leader_key = 'm', -- Per Buffer Mappings
+  },
+  cmd = "Arrow",
+  keys = {
+    { mode = "n", "<leader>h", function() require("arrow").open() end, desc = "Arrow", nowait = true },
+    { mode = "n", "<leader>m", function() require("arrow").open_bookmarks() end, desc = "Arrow Buffer Bookmarks", nowait = true },
   }
 }
 ```
 
-### Packer
-
-```lua
-use { 'otavioschwanck/arrow.nvim', config = function()
-  require('arrow').setup({
-    show_icons = true,
-    leader_key = ';' -- Recommended to be a single key
-    buffer_leader_key = 'm', -- Per Buffer Mappings
-  })
-end }
-```
-
 ## Usage
 
-Just press the leader_key set on setup and follow you heart. (Is that easy)
+Map `function() require("arrow").open() end` or `"<cmd>Arrow<cr>"` to a key of your choice to open Arrow.
 
-## Differences from harpoon:
+For in-buffer bookmarks, map `function() require("arrow").open_bookmarks() end` or `"<cmd>Arrow open_bookmarks<cr>"`.
 
-- Single keymap needed
-- Different UI to manage the bookmarks
-- Statusline helpers
-- Show only the filename (show path only when needed: same filename twice or too generic filename, like create, index, etc)
-- Has colors and icons <3
-- Has the delete mode to quickly delete items
-- Files can be opened vertically or horizontally
-- Still has the option to edit file
+## Compared with Harpoon
+
+- Only a single keymap needed to access the save list
+- A more beautiful UI to manage the save list
+- Status line helpers to integrate with other areas of Neovim
+- Show only the filename (only shows full path when ambiguous)
+- Pretty colors and icons
+- A delete mode to quickly delete items
+- Files can be opened easily in vertical or horizontal splits
+- You can still edit the save list file directly
 
 ## Advanced Setup
 
@@ -109,15 +105,15 @@ Just press the leader_key set on setup and follow you heart. (Is that easy)
 You can also map previous and next key:
 
 ```lua
-vim.keymap.set("n", "H", require("arrow.persist").previous)
-vim.keymap.set("n", "L", require("arrow.persist").next)
-vim.keymap.set("n", "<C-s>", require("arrow.persist").toggle)
+vim.keymap.set("n", "H", function() require("arrow").prev_buffer() end)
+vim.keymap.set("n", "L", function() require("arrow").next_buffer() end)
+vim.keymap.set("n", "<C-s>", function() require("arrow").save_current_buffer end)
 ```
 
 
 ## Statusline
 
-You can use `require('arrow.statusline')` to access the statusline helpers:
+You can use `require('arrow.statusline')` to access the status line helpers:
 
 ```lua
 local statusline = require('arrow.statusline')
@@ -128,81 +124,13 @@ statusline.text_for_statusline_with_icons() -- Same, but with an bow and arrow i
 
 ![statusline](https://i.imgur.com/v7Rvagj.png)
 
-## NvimTree
-Show arrow marks in front of filename
-
-<img width="346" alt="aaaaaaaaaa" src="https://github.com/xzbdmw/arrow.nvim/assets/97848247/5357e7ce-8ec7-4e43-a0cf-0856240bbb9f">
-
-
-A small patch is needed.
-<details>
-  <summary>Click to expand</summary>
-
-  In `nvim-tree.lua/lua/nvim-tree/renderer/builder.lua`
-change function `formate_line` to
-```lua
-function Builder:format_line(indent_markers, arrows, icon, name, node)
-  local added_len = 0
-  local function add_to_end(t1, t2)
-    if not t2 then
-      return
-    end
-    for _, v in ipairs(t2) do
-      if added_len > 0 then
-        table.insert(t1, { str = M.opts.renderer.icons.padding })
-      end
-      table.insert(t1, v)
-    end
-
-    -- first add_to_end don't need padding
-    -- hence added_len is calculated at the end to be used next time
-    added_len = 0
-    for _, v in ipairs(t2) do
-      added_len = added_len + #v.str
-    end
-  end
-
-  local line = { indent_markers, arrows }
-
-  local arrow_index = 1
-  local arrow_filenames = vim.g.arrow_filenames
-  if arrow_filenames then
-    for i, filename in ipairs(arrow_filenames) do
-      if string.sub(node.absolute_path, -#filename) == filename then
-        local statusline = require "arrow.statusline"
-        arrow_index = statusline.text_for_statusline(_, i)
-        line[1].str = string.sub(line[1].str, 1, -3)
-        line[2].str = "(" .. arrow_index .. ") "
-        line[2].hl = { "ArrowFileIndex" }
-        break
-      end
-    end
-  end
-
-  add_to_end(line, { icon })
-
-  for i = #M.decorators, 1, -1 do
-    add_to_end(line, M.decorators[i]:icons_before(node))
-  end
-
-  add_to_end(line, { name })
-
-  for i = #M.decorators, 1, -1 do
-    add_to_end(line, M.decorators[i]:icons_after(node))
-  end
-
-  return line
-end
-```
-
-</details>
-
 ## Highlights
 
 - ArrowFileIndex
 - ArrowCurrentFile
 - ArrowAction
 - ArrowDeleteMode
+- ArrowLocation
 
 ## Working with sessions plugins
 
@@ -216,11 +144,10 @@ require("arrow.persist").load_cache_file()
 
 Obs: persistence.nvim works fine with arrow.
 
-## Special Contributors
-
-- ![xzbdmw](https://github.com/xzbdmw) - Had the idea of per buffer bookmarks and
-helped me to implement it.
-
-### Do you like my work? Please, buy me a coffee
+## Like the original arrow.nvim? Buy the maintainer a coffee
 
 https://www.buymeacoffee.com/otavioschwanck
+
+### Special Contributors
+
+- ![xzbdmw](https://github.com/xzbdmw) - Had the idea of per buffer bookmarks and helped to implement it.

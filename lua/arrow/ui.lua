@@ -377,21 +377,6 @@ function M.openMenu(bufnr)
 
   local menuKeymapOpts = { noremap = true, silent = true, buffer = menuBuf, nowait = true }
 
-  local leader_key = config.leader_key
-  if leader_key then
-    vim.keymap.set("n", leader_key, closeMenu, menuKeymapOpts)
-  end
-
-  local buffer_leader_key = config.buffer_leader_key
-  if buffer_leader_key then
-    vim.keymap.set("n", buffer_leader_key, function()
-      closeMenu()
-
-      vim.schedule(function()
-        require("arrow.buffer_ui").openMenu(call_buffer)
-      end)
-    end, menuKeymapOpts)
-  end
 
   vim.keymap.set("n", mappings.quit, closeMenu, menuKeymapOpts)
   vim.keymap.set("n", mappings.edit, function()

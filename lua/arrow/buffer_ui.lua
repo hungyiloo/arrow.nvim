@@ -341,17 +341,6 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
 
   vim.api.nvim_buf_set_lines(actions_buffer, 0, -1, false, lines)
 
-  local leader_key = config.leader_key
-  if leader_key then
-    vim.keymap.set("n", leader_key, function()
-      closeMenu(actions_buffer, call_buffer)
-
-      vim.schedule(function()
-        require("arrow.ui").openMenu()
-      end)
-    end, menuKeymapOpts)
-  end
-
   vim.keymap.set("n", mappings.quit, function()
     closeMenu(actions_buffer, call_buffer)
   end, menuKeymapOpts)

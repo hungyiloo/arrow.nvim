@@ -195,11 +195,6 @@ function M.open_cache_file()
   vim.api.nvim_buf_set_keymap(bufnr, "n", "q", close_buffer, { noremap = true, silent = true })
   vim.api.nvim_buf_set_keymap(bufnr, "n", "<Esc>", close_buffer, { noremap = true, silent = true })
 
-  local leader_key = config.leader_key
-  if leader_key then
-    vim.keymap.set("n", leader_key, close_buffer, { noremap = true, silent = true, buffer = bufnr })
-  end
-
   vim.keymap.set("n", "<CR>", function()
     local line = vim.api.nvim_get_current_line()
 

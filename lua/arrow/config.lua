@@ -1,11 +1,5 @@
 local M = {}
 
----@type string|nil
-M.leader_key = nil
-
----@type string|nil
-M.buffer_leader_key = nil
-
 M.show_icons = true
 M.hide_handbook = false
 M.separate_by_branch = false

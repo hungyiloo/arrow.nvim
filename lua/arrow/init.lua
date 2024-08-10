@@ -27,8 +27,6 @@ function M.setup(opts)
   config.horizontal_action = actions.split_horizontal or config.horizontal_action
 
   config.save_path = opts.save_path or config.save_path
-  config.leader_key = opts.leader_key
-  config.buffer_leader_key = opts.buffer_leader_key
   config.always_show_path = opts.always_show_path ~= nil and opts.always_show_path or config.always_show_path
   config.show_icons = opts.show_icons ~= nil and opts.show_icons or config.show_icons
   config.index_keys = opts.index_keys ~= nil and opts.index_keys or config.index_keys
@@ -37,19 +35,6 @@ function M.setup(opts)
   config.separate_save_and_remove = opts.separate_save_and_remove ~= nil and opts.separate_save_and_remove
     or config.separate_save_and_remove
   config.save_key = opts.save_key ~= nil and (save_keys[opts.save_key] or opts.save_key) or config.save_key
-
-  if config.leader_key then
-    vim.keymap.set("n", config.leader_key, ui.openMenu, { noremap = true, silent = true, nowait = true })
-  end
-
-  if config.buffer_leader_key then
-    vim.keymap.set(
-      "n",
-      config.buffer_leader_key,
-      require("arrow.buffer_ui").openMenu,
-      { noremap = true, silent = true, nowait = true }
-    )
-  end
 
   if config.per_buffer_config.satellite then
     require("arrow.integration.satellite")
