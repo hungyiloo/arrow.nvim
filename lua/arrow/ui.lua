@@ -364,13 +364,7 @@ function M.openMenu(bufnr)
 
   to_highlight = {}
   fileNames = vim.g.arrow_filenames
-  local filename
-
-  if config.getState("global_bookmarks") == true then
-    filename = vim.fn.expand("%:p")
-  else
-    filename = utils.get_current_buffer_path()
-  end
+  local filename = utils.get_current_buffer_path()
 
   local menuBuf = createMenuBuffer(filename)
 

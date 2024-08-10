@@ -88,16 +88,6 @@ end
 
 function M.is_saved(filename)
   for i, name in ipairs(vim.g.arrow_filenames) do
-    if config.getState("relative_path") == true and config.getState("global_bookmarks") == false then
-      if not name:match("^%./") and not utils.string_contains_whitespace(name) then
-        name = "./" .. name
-      end
-
-      if not filename:match("^%./") and not utils.string_contains_whitespace(filename) then
-        filename = "./" .. filename
-      end
-    end
-
     if name == filename then
       return i
     end
@@ -180,14 +170,6 @@ function M.open_cache_file()
     cache_content = {}
   else
     cache_content = vim.fn.readfile(cache_path)
-  end
-
-  if config.getState("relative_path") == true and config.getState("global_bookmarks") == false then
-    for i, line in ipairs(cache_content) do
-      if not line:match("^%./") and not utils.string_contains_whitespace(line) and #cache_content[i] > 1 then
-        cache_content[i] = "./" .. line
-      end
-    end
   end
 
   local bufnr = vim.api.nvim_create_buf(false, true)

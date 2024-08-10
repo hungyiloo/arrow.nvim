@@ -10,15 +10,7 @@ end
 
 function M.is_on_arrow_file(bufnr)
   bufnr = bufnr or vim.api.nvim_get_current_buf()
-
-  local file_path
-  local bufname = vim.fn.bufname(bufnr)
-  if config.getState("global_bookmarks") == true then
-    file_path = vim.fn.fnamemodify(bufname, ":p")
-  else
-    file_path = utils.get_buffer_path(bufnr)
-  end
-
+  local file_path = utils.get_buffer_path(bufnr)
   return persist.is_saved(file_path)
 end
 

@@ -117,8 +117,7 @@ end
 
 function M.get_buffer_path(bufnr)
   local bufname = vim.fn.bufname(bufnr)
-  local absolute_buffer_path = vim.fn.fnamemodify(bufname, ":p")
-  return absolute_buffer_path
+  return vim.fn.fnamemodify(bufname, ":p")
 end
 
 function M.string_contains_whitespace(str)
