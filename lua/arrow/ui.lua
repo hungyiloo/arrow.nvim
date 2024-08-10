@@ -110,9 +110,7 @@ local function renderBuffer(buffer)
   current_index = 0
 
   for i, fileName in ipairs(formattedFleNames) do
-    local displayIndex = i
-
-    displayIndex = config.index_keys:sub(i, i)
+    local displayIndex = config.index_keys:sub(i, i)
 
     vim.api.nvim_buf_add_highlight(buf, -1, "ArrowDeleteMode", i + 3, 0, -1)
 
