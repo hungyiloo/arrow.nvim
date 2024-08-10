@@ -3,56 +3,56 @@ local M = {}
 local config = require("arrow.config")
 
 function M.table_comp(o1, o2)
-	local callList = {}
+  local callList = {}
 
-	if o1 == o2 then
-		return true
-	end
+  if o1 == o2 then
+    return true
+  end
 
-	local o1Type = type(o1)
-	local o2Type = type(o2)
-	if o1Type ~= o2Type then
-		return false
-	end
-	if o1Type ~= "table" then
-		return false
-	end
+  local o1Type = type(o1)
+  local o2Type = type(o2)
+  if o1Type ~= o2Type then
+    return false
+  end
+  if o1Type ~= "table" then
+    return false
+  end
 
-	-- add only when objects are tables, cache results
-	local oComparisons = callList[o1]
-	if not oComparisons then
-		oComparisons = {}
-		callList[o1] = oComparisons
-	end
-	-- false means that comparison is in progress
-	oComparisons[o2] = false
+  -- add only when objects are tables, cache results
+  local oComparisons = callList[o1]
+  if not oComparisons then
+    oComparisons = {}
+    callList[o1] = oComparisons
+  end
+  -- false means that comparison is in progress
+  oComparisons[o2] = false
 
-	local keySet = {}
-	for key1, value1 in pairs(o1) do
-		local value2 = o2[key1]
-		if value2 == nil then
-			return false
-		end
+  local keySet = {}
+  for key1, value1 in pairs(o1) do
+    local value2 = o2[key1]
+    if value2 == nil then
+      return false
+    end
 
-		local vComparisons = callList[value1]
-		if not vComparisons or vComparisons[value2] == nil then
-			if not M.table_comp(value1, value2, true, callList) then
-				return false
-			end
-		end
+    local vComparisons = callList[value1]
+    if not vComparisons or vComparisons[value2] == nil then
+      if not M.table_comp(value1, value2, true, callList) then
+        return false
+      end
+    end
 
-		keySet[key1] = true
-	end
+    keySet[key1] = true
+  end
 
-	for key2, _ in pairs(o2) do
-		if not keySet[key2] then
-			return false
-		end
-	end
+  for key2, _ in pairs(o2) do
+    if not keySet[key2] then
+      return false
+    end
+  end
 
-	-- comparison finished - objects are equal do not compare again
-	oComparisons[o2] = true
-	return true
+  -- comparison finished - objects are equal do not compare again
+  oComparisons[o2] = true
+  return true
 end
 
 ---Memoize a function using hash_fn to hash the arguments.
@@ -61,68 +61,68 @@ end
 ---@param hash_fn fun(...): any
 ---@return F
 function M.memoize(fn, hash_fn)
-	local cache = setmetatable({}, { __mode = "kv" }) ---@type table<any,any>
+  local cache = setmetatable({}, { __mode = "kv" }) ---@type table<any,any>
 
-	return function(...)
-		local key = hash_fn(...)
-		if cache[key] == nil then
-			local v = fn(...) ---@type any
-			cache[key] = v ~= nil and v or vim.NIL
-		end
+  return function(...)
+    local key = hash_fn(...)
+    if cache[key] == nil then
+      local v = fn(...) ---@type any
+      cache[key] = v ~= nil and v or vim.NIL
+    end
 
-		local v = cache[key]
-		return v ~= vim.NIL and vim.deepcopy(v) or nil
-	end
+    local v = cache[key]
+    return v ~= vim.NIL and vim.deepcopy(v) or nil
+  end
 end
 
 function M.normalize_path_to_filename(path)
-	if vim.fn.has("win32") then
-		path = path:gsub("\\", "/")
-		path = path:gsub(":", "/")
-	end
-	return path:gsub("/", "_")
+  if vim.fn.has("win32") then
+    path = path:gsub("\\", "/")
+    path = path:gsub(":", "/")
+  end
+  return path:gsub("/", "_")
 end
 
 function M.join_two_keys_tables(tableA, tableB)
-	local newTable = {}
+  local newTable = {}
 
-	for k, v in pairs(tableA) do
-		newTable[k] = v
-	end
+  for k, v in pairs(tableA) do
+    newTable[k] = v
+  end
 
-	for k, v in pairs(tableB) do
-		newTable[k] = v
-	end
+  for k, v in pairs(tableB) do
+    newTable[k] = v
+  end
 
-	return newTable
+  return newTable
 end
 
 function M.join_two_arrays(tableA, tableB)
-	local newTable = {}
+  local newTable = {}
 
-	for _, v in ipairs(tableA) do
-		table.insert(newTable, v)
-	end
+  for _, v in ipairs(tableA) do
+    table.insert(newTable, v)
+  end
 
-	for _, v in ipairs(tableB) do
-		table.insert(newTable, v)
-	end
+  for _, v in ipairs(tableB) do
+    table.insert(newTable, v)
+  end
 
-	return newTable
+  return newTable
 end
 
 function M.get_current_buffer_path()
-	return M.get_buffer_path(vim.api.nvim_get_current_buf())
+  return M.get_buffer_path(vim.api.nvim_get_current_buf())
 end
 
 function M.get_buffer_path(bufnr)
-	local bufname = vim.fn.bufname(bufnr)
-	local absolute_buffer_path = vim.fn.fnamemodify(bufname, ":p")
+  local bufname = vim.fn.bufname(bufnr)
+  local absolute_buffer_path = vim.fn.fnamemodify(bufname, ":p")
   return absolute_buffer_path
 end
 
 function M.string_contains_whitespace(str)
-	return string.match(str, "%s") ~= nil
+  return string.match(str, "%s") ~= nil
 end
 
 return M
