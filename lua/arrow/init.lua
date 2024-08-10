@@ -3,6 +3,7 @@ local M = {}
 local config = require("arrow.config")
 local utils = require("arrow.utils")
 local ui = require("arrow.ui")
+local buffer_ui = require("arrow.buffer_ui")
 local persist = require("arrow.persist")
 local buffer_persist = require("arrow.buffer_persist")
 local git = require("arrow.git")
@@ -149,5 +150,11 @@ function M.setup(opts)
 
 	commands.setup()
 end
+
+---@type fun(bufnr?: integer)
+M.open = ui.openMenu
+
+---@type fun(bufnr?: integer)
+M.open_buffer = buffer_ui.openMenu
 
 return M
