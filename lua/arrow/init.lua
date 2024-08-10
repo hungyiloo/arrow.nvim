@@ -1,6 +1,5 @@
 local M = {}
 
-local buffer_persist = require("arrow.buffer_persist")
 local buffer_ui = require("arrow.buffer_ui")
 local commands = require("arrow.commands")
 local config = require("arrow.config")
