@@ -10,12 +10,25 @@ local to_highlight = {}
 
 local current_index = 0
 
+local function max_mapping_length()
+  local max_len = 0
+  for _, mapping in pairs(config.mappings) do
+    local len = string.len(mapping)
+    if len > max_len then
+      max_len = len
+    end
+  end
+  return max_len
+end
+
 local function getActionsMenu()
   local mappings = config.mappings
 
+  local pad = max_mapping_length()
+
   if #vim.g.arrow_filenames == 0 then
     return {
-      string.format("%s Save File", mappings.toggle),
+      string.format("%-" .. pad .. "s Save File", mappings.toggle),
     }
   end
 
@@ -24,24 +37,24 @@ local function getActionsMenu()
   local separate_save_and_remove = config.separate_save_and_remove
 
   local return_mappings = {
-    string.format("%s Edit Arrow File", mappings.edit),
-    string.format("%s Clear All Items", mappings.clear_all_items),
-    string.format("%s Delete mode", mappings.delete_mode),
-    string.format("%s Open Vertical", mappings.open_vertical),
-    string.format("%s Open Horizontal", mappings.open_horizontal),
-    string.format("%s Next Item", mappings.next_item),
-    string.format("%s Prev Item", mappings.prev_item),
-    string.format("%s Quit", mappings.quit),
+    string.format("%" .. pad .. "s Edit Arrow File", mappings.edit),
+    string.format("%" .. pad .. "s Clear All Items", mappings.clear_all_items),
+    string.format("%" .. pad .. "s Delete mode", mappings.delete_mode),
+    string.format("%" .. pad .. "s Open Vertical", mappings.open_vertical),
+    string.format("%" .. pad .. "s Open Horizontal", mappings.open_horizontal),
+    string.format("%" .. pad .. "s Next Item", mappings.next_item),
+    string.format("%" .. pad .. "s Prev Item", mappings.prev_item),
+    string.format("%" .. pad .. "s Quit", mappings.quit),
   }
 
   if separate_save_and_remove then
-    table.insert(return_mappings, 1, string.format("%s Remove Current File", mappings.remove))
-    table.insert(return_mappings, 1, string.format("%s Save Current File", mappings.toggle))
+    table.insert(return_mappings, 1, string.format("%" .. pad .. "s Remove Current File", mappings.remove))
+    table.insert(return_mappings, 1, string.format("%" .. pad .. "s Save Current File", mappings.toggle))
   else
     if already_saved == true then
-      table.insert(return_mappings, 1, string.format("%s Remove Current File", mappings.toggle))
+      table.insert(return_mappings, 1, string.format("%" .. pad .. "s Remove Current File", mappings.toggle))
     else
-      table.insert(return_mappings, 1, string.format("%s Save Current File", mappings.toggle))
+      table.insert(return_mappings, 1, string.format("%" .. pad .. "s Save Current File", mappings.toggle))
     end
   end
 
@@ -149,7 +162,7 @@ local function renderBuffer(buffer)
   local actionsMenu = getActionsMenu()
 
   -- Add actions to the menu
-  if not (config.hide_handbook) then
+  if not config.hide_handbook then
     for _, action in ipairs(actionsMenu) do
       table.insert(lines, "   " .. action)
     end
@@ -196,8 +209,9 @@ local function render_highlights(buffer)
     end
   end
 
+  local mapping_len = max_mapping_length()
   for i = #fileNames + 3, #fileNames + #actionsMenu + 3 do
-    vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", i - 1, 3, 4)
+    vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", i - 1, 3, 3 + mapping_len)
   end
 
   -- Find the line containing "d - Delete Mode"
@@ -289,13 +303,13 @@ function M.openFile(fileNumber)
 end
 
 function M.getWindowConfig()
-  local show_handbook = not (config.hide_handbook)
+  local show_handbook = not config.hide_handbook
   local parsedFileNames = format_file_names(fileNames)
   local separate_save_and_remove = config.separate_save_and_remove
 
   local max_width = 0
   if show_handbook then
-    max_width = 13
+    max_width = 13 + max_mapping_length() - 1
     if separate_save_and_remove then
       max_width = max_width + 2
     end
@@ -376,7 +390,6 @@ function M.openMenu(bufnr)
   local separate_save_and_remove = config.separate_save_and_remove
 
   local menuKeymapOpts = { noremap = true, silent = true, buffer = menuBuf, nowait = true }
-
 
   vim.keymap.set("n", mappings.quit, closeMenu, menuKeymapOpts)
   vim.keymap.set("n", mappings.edit, function()
