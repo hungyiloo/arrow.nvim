@@ -381,7 +381,7 @@ function M.openMenu(bufnr)
   vim.keymap.set("n", mappings.quit, closeMenu, menuKeymapOpts)
   vim.keymap.set("n", mappings.edit, function()
     closeMenu()
-    persist.open_cache_file()
+    persist.open_cache_file_editor()
   end, menuKeymapOpts)
 
   if separate_save_and_remove then

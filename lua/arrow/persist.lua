@@ -156,7 +156,7 @@ function M.previous()
   M.go_to(previous_index)
 end
 
-function M.open_cache_file()
+function M.open_cache_file_editor()
   git.refresh_git_branch()
 
   local cache_path = cache_file_path()
