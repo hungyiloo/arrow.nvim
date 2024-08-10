@@ -1,6 +1,7 @@
 # arrow.nvim
 
-> [!warning] A wild fork has appeared!
+> [!WARNING] 
+> A wild fork has appeared!
 > This is a personal fork of the original [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim). To fix Windows compatibility and a whole raft of bugs, I made sweeping changes
 
 Arrow.nvim is a plugin made to quickly locate files (like harpoon) using a single UI and single keymap. 
