@@ -34,7 +34,6 @@ function M.setup(opts)
   config.index_keys = opts.index_keys ~= nil and opts.index_keys or config.index_keys
   config.hide_handbook = opts.hide_handbook ~= nil and opts.hide_handbook or config.hide_handbook
   config.separate_by_branch = opts.separate_by_branch ~= nil and opts.separate_by_branch or config.separate_by_branch
-  config.global_bookmarks = opts.global_bookmarks ~= nil and opts.global_bookmarks or config.global_bookmarks
   config.separate_save_and_remove = opts.separate_save_and_remove ~= nil and opts.separate_save_and_remove
     or config.separate_save_and_remove
   config.save_key = opts.save_key ~= nil and (save_keys[opts.save_key] or opts.save_key) or config.save_key

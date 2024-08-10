@@ -11,4 +11,8 @@ function M.git_root()
   return git_root
 end
 
+function M.global()
+  return "global"
+end
+
 return M

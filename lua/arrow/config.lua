@@ -9,7 +9,6 @@ M.buffer_leader_key = nil
 M.show_icons = true
 M.hide_handbook = false
 M.separate_by_branch = false
-M.global_bookmarks = false
 M.separate_save_and_remove = false
 
 M.window = {

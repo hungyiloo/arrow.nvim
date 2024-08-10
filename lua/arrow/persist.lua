@@ -5,10 +5,6 @@ local git = require("arrow.git")
 local utils = require("arrow.utils")
 
 local function save_key()
-  if config.global_bookmarks == true then
-    return "global"
-  end
-
   if config.separate_by_branch then
     local branch = git.refresh_git_branch()
 
