@@ -15,16 +15,16 @@ function M.get_git_branch()
 end
 
 function M.refresh_git_branch()
-  if config.getState("separate_by_branch") then
-    local current_branch = config.getState("current_branch")
+  if config.separate_by_branch then
+    local current_branch = config.current_branch
 
     if current_branch ~= M.get_git_branch() then
-      config.setState("current_branch", M.get_git_branch())
+      config.current_branch = M.get_git_branch()
       require("arrow.persist").load_cache_file()
     end
   end
 
-  return config.getState("current_branch")
+  return config.current_branch
 end
 
 return M

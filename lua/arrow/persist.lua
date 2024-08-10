@@ -5,23 +5,23 @@ local git = require("arrow.git")
 local utils = require("arrow.utils")
 
 local function save_key()
-  if config.getState("global_bookmarks") == true then
+  if config.global_bookmarks == true then
     return "global"
   end
 
-  if config.getState("separate_by_branch") then
+  if config.separate_by_branch then
     local branch = git.refresh_git_branch()
 
     if branch then
-      return utils.normalize_path_to_filename(config.getState("save_key_cached") .. "-" .. branch)
+      return utils.normalize_path_to_filename(config.save_key() .. "-" .. branch)
     end
   end
 
-  return utils.normalize_path_to_filename(config.getState("save_key_cached"))
+  return utils.normalize_path_to_filename(config.save_key())
 end
 
 local function cache_file_path()
-  local save_path = config.getState("save_path")()
+  local save_path = config.save_path()
 
   save_path = save_path:gsub("/$", "")
 
@@ -199,7 +199,7 @@ function M.open_cache_file()
   vim.api.nvim_buf_set_keymap(bufnr, "n", "q", close_buffer, { noremap = true, silent = true })
   vim.api.nvim_buf_set_keymap(bufnr, "n", "<Esc>", close_buffer, { noremap = true, silent = true })
 
-  local leader_key = config.getState("leader_key")
+  local leader_key = config.leader_key
   if leader_key then
     vim.keymap.set("n", leader_key, close_buffer, { noremap = true, silent = true, buffer = bufnr })
   end

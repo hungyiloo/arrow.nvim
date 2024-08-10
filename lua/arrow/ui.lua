@@ -11,7 +11,7 @@ local to_highlight = {}
 local current_index = 0
 
 local function getActionsMenu()
-  local mappings = config.getState("mappings")
+  local mappings = config.mappings
 
   if #vim.g.arrow_filenames == 0 then
     return {
@@ -21,7 +21,7 @@ local function getActionsMenu()
 
   local already_saved = current_index > 0
 
-  local separate_save_and_remove = config.getState("separate_save_and_remove")
+  local separate_save_and_remove = config.separate_save_and_remove
 
   local return_mappings = {
     string.format("%s Edit Arrow File", mappings.edit),
@@ -70,7 +70,7 @@ local function format_file_names(file_names)
   for _, full_path in ipairs(file_names) do
     local file_name = get_file_name(full_path)
     local dir_name = vim.fn.fnamemodify(full_path, ":h")
-    if file_name ~= full_path and (name_occurrences[file_name] > 1 or config.getState("always_show_path")) then
+    if file_name ~= full_path and (name_occurrences[file_name] > 1 or config.always_show_path) then
       table.insert(formatted_names, string.format("%s    %s", file_name, dir_name))
     else
       table.insert(formatted_names, string.format("%s", file_name))
@@ -100,7 +100,7 @@ end
 local function renderBuffer(buffer)
   vim.api.nvim_set_option_value("modifiable", true, { buf = buffer })
 
-  local icons = config.getState("show_icons")
+  local icons = config.show_icons
   local buf = buffer or vim.api.nvim_get_current_buf()
   local lines = { "" }
 
@@ -112,7 +112,7 @@ local function renderBuffer(buffer)
   for i, fileName in ipairs(formattedFleNames) do
     local displayIndex = i
 
-    displayIndex = config.getState("index_keys"):sub(i, i)
+    displayIndex = config.index_keys:sub(i, i)
 
     vim.api.nvim_buf_add_highlight(buf, -1, "ArrowDeleteMode", i + 3, 0, -1)
 
@@ -151,7 +151,7 @@ local function renderBuffer(buffer)
   local actionsMenu = getActionsMenu()
 
   -- Add actions to the menu
-  if not (config.getState("hide_handbook")) then
+  if not (config.hide_handbook) then
     for _, action in ipairs(actionsMenu) do
       table.insert(lines, "   " .. action)
     end
@@ -177,7 +177,7 @@ end
 
 local function render_highlights(buffer)
   local actionsMenu = getActionsMenu()
-  local mappings = config.getState("mappings")
+  local mappings = config.mappings
 
   vim.api.nvim_buf_clear_namespace(buffer, -1, 0, -1)
   local menuBuf = buffer or vim.api.nvim_get_current_buf()
@@ -192,7 +192,7 @@ local function render_highlights(buffer)
     end
   end
 
-  if config.getState("show_icons") then
+  if config.show_icons then
     for k, v in pairs(to_highlight) do
       vim.api.nvim_buf_add_highlight(menuBuf, -1, v, k, 5, 8)
     end
@@ -277,11 +277,11 @@ function M.openFile(fileNumber)
     fileName = vim.fn.fnameescape(fileName)
 
     if vim.b.arrow_current_mode == "" or not vim.b.arrow_current_mode then
-      action = config.getState("open_action")
+      action = config.open_action
     elseif vim.b.arrow_current_mode == "vertical_mode" then
-      action = config.getState("vertical_action")
+      action = config.vertical_action
     elseif vim.b.arrow_current_mode == "horizontal_mode" then
-      action = config.getState("horizontal_action")
+      action = config.horizontal_action
     end
 
     closeMenu()
@@ -291,9 +291,9 @@ function M.openFile(fileNumber)
 end
 
 function M.getWindowConfig()
-  local show_handbook = not (config.getState("hide_handbook"))
+  local show_handbook = not (config.hide_handbook)
   local parsedFileNames = format_file_names(fileNames)
-  local separate_save_and_remove = config.getState("separate_save_and_remove")
+  local separate_save_and_remove = config.separate_save_and_remove
 
   local max_width = 0
   if show_handbook then
@@ -335,7 +335,7 @@ function M.getWindowConfig()
     current_config.width = 18
   end
 
-  local res = vim.tbl_deep_extend("force", current_config, config.getState("window"))
+  local res = vim.tbl_deep_extend("force", current_config, config.window)
 
   if res.width == "auto" then
     res.width = current_config.width
@@ -372,18 +372,18 @@ function M.openMenu(bufnr)
 
   local win = vim.api.nvim_open_win(menuBuf, true, window_config)
 
-  local mappings = config.getState("mappings")
+  local mappings = config.mappings
 
-  local separate_save_and_remove = config.getState("separate_save_and_remove")
+  local separate_save_and_remove = config.separate_save_and_remove
 
   local menuKeymapOpts = { noremap = true, silent = true, buffer = menuBuf, nowait = true }
 
-  local leader_key = config.getState("leader_key")
+  local leader_key = config.leader_key
   if leader_key then
     vim.keymap.set("n", leader_key, closeMenu, menuKeymapOpts)
   end
 
-  local buffer_leader_key = config.getState("buffer_leader_key")
+  local buffer_leader_key = config.buffer_leader_key
   if buffer_leader_key then
     vim.keymap.set("n", buffer_leader_key, function()
       closeMenu()

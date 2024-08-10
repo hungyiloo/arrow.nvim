@@ -31,7 +31,7 @@ vim.api.nvim_create_autocmd({ "BufLeave", "BufWritePost" }, {
 })
 
 local function getActionsMenu(count)
-  local mappings = config.getState("mappings")
+  local mappings = config.mappings
 
   local return_mappings
 
@@ -57,7 +57,7 @@ local function getActionsMenu(count)
 end
 
 function M.spawn_preview_window(buffer, index, bookmark, bookmark_count)
-  local lines_count = config.getState("per_buffer_config").lines
+  local lines_count = config.per_buffer_config.lines
 
   local height = math.ceil((vim.o.lines - 4) / 2)
 
@@ -65,7 +65,7 @@ function M.spawn_preview_window(buffer, index, bookmark, bookmark_count)
 
   local width = math.ceil(vim.o.columns / 2)
 
-  local zindex = config.getState("buffer_mark_zindex")
+  local zindex = config.per_buffer_config.zindex
 
   lastRow = row
   spawn_col = width
@@ -80,7 +80,7 @@ function M.spawn_preview_window(buffer, index, bookmark, bookmark_count)
     zindex = zindex or 50,
   }
 
-  local displayIndex = config.getState("index_keys"):sub(index, index)
+  local displayIndex = config.index_keys:sub(index, index)
 
   local win = vim.api.nvim_open_win(buffer, true, window_config)
 
@@ -97,7 +97,7 @@ function M.spawn_preview_window(buffer, index, bookmark, bookmark_count)
 
   table.insert(preview_buffers, { buffer = buffer, win = win, index = index })
 
-  local ctx_config = config.getState("per_buffer_config").treesitter_context
+  local ctx_config = config.per_buffer_config.treesitter_context
   if ctx_config ~= nil and ctx_config.line_shift_down ~= nil then
     local shift = ctx_config.line_shift_down
 
@@ -301,7 +301,7 @@ end
 function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_window, index)
   local actions_buffer = vim.api.nvim_create_buf(false, true)
 
-  local lines_count = config.getState("per_buffer_config").lines
+  local lines_count = config.per_buffer_config.lines
 
   local width = math.ceil(vim.o.columns / 2)
 
@@ -331,7 +331,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
 
   vim.api.nvim_open_win(actions_buffer, true, window_config)
 
-  local mappings = config.getState("mappings")
+  local mappings = config.mappings
 
   local lines = getActionsMenu(#bookmarks)
 
@@ -341,7 +341,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
 
   vim.api.nvim_buf_set_lines(actions_buffer, 0, -1, false, lines)
 
-  local leader_key = config.getState("leader_key")
+  local leader_key = config.leader_key
   if leader_key then
     vim.keymap.set("n", leader_key, function()
       closeMenu(actions_buffer, call_buffer)
@@ -360,7 +360,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
     closeMenu(actions_buffer, call_buffer)
   end, menuKeymapOpts)
 
-  local buffer_leader_key = config.getState("buffer_leader_key")
+  local buffer_leader_key = config.buffer_leader_key
   if buffer_leader_key then
     vim.keymap.set("n", buffer_leader_key, function()
       closeMenu(actions_buffer, call_buffer)
@@ -390,7 +390,7 @@ function M.spawn_action_windows(call_buffer, bookmarks, line_nr, col_nr, call_wi
     end, menuKeymapOpts)
   end
 
-  local indexes = config.getState("index_keys")
+  local indexes = config.index_keys
 
   for i, bookmark in ipairs(bookmarks) do
     vim.keymap.set("n", indexes:sub(i, i), function()

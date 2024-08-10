@@ -23,7 +23,7 @@ function M.get_ns()
 end
 
 function M.cache_file_path(filename)
-  local save_path = config.getState("save_path")()
+  local save_path = config.save_path()
 
   save_path = save_path:gsub("/$", "")
 
@@ -43,7 +43,7 @@ end
 
 function M.redraw_bookmarks(bufnr, result)
   for i, res in ipairs(result) do
-    local indexes = config.getState("index_keys")
+    local indexes = config.index_keys
 
     local line = res.line
 
@@ -106,7 +106,7 @@ function M.sync_buffer_bookmarks(bufnr)
     return
   end
 
-  if config.getState("per_buffer_config").sort_automatically then
+  if config.per_buffer_config.sort_automatically then
     table.sort(M.local_bookmarks[bufnr], function(a, b)
       return a.line < b.line
     end)

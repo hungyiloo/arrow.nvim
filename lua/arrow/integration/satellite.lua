@@ -12,10 +12,10 @@ local handler = {
   name = "arrow",
 }
 
-local config = arrow_config.getState("satellite_config")
+local config = arrow_config.per_buffer_config.satellite or {}
 local have_setup = false
 
-if config.enable == false then
+if not config.enable then
   return
 end
 
