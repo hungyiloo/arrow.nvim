@@ -66,17 +66,29 @@ For in-buffer bookmarks, map `function() require("arrow").open_bookmarks() end` 
     delete_mode = "d",
     clear_all_items = "C",
     toggle = "s", -- used as save if separate_save_and_remove is true
-    open_vertical = "v",
-    open_horizontal = "-",
     quit = "q",
     remove = "x", -- only used if separate_save_and_remove is true
     next_item = "]",
     prev_item = "["
+
+    -- custom actions mappings; names must match actions defined below
+    ["Open Vertical"] = "v",
+    ["Open Horizontal"] = "h",
   },
-  custom_actions = {
-    open = function(target_file_name, current_file_name) end, -- target_file_name = file selected to be open, current_file_name = filename from where this was called
-    split_vertical = function(target_file_name, current_file_name) end,
-    split_horizontal = function(target_file_name, current_file_name) end,
+  actions = {
+    -- the default file open action can be overridden
+    open = function(filename)
+      vim.cmd("edit " .. filename)
+    end,
+
+    -- custom actions are defined like this
+    ["Open Vertical"] = function(filename)
+      vim.cmd("vsplit " .. filename)
+    end,
+
+    ["Open Horizontal"] = function(filename)
+      vim.cmd("vsplit " .. filename)
+    end,
   },
   window = { -- controls the appearance and position of an arrow window (see nvim_open_win() for all options)
     width = "auto",
@@ -108,7 +120,7 @@ You can also map previous and next key:
 ```lua
 vim.keymap.set("n", "H", function() require("arrow").prev_buffer() end)
 vim.keymap.set("n", "L", function() require("arrow").next_buffer() end)
-vim.keymap.set("n", "<C-s>", function() require("arrow").save_current_buffer end)
+vim.keymap.set("n", "<C-s>", function() require("arrow").save_current_buffer() end)
 ```
 
 

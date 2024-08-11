@@ -36,29 +36,34 @@ local function getActionsMenu()
 
   local separate_save_and_remove = config.separate_save_and_remove
 
-  local return_mappings = {
+  local menu_lines = {
     string.format("%" .. pad .. "s Edit Arrow File", mappings.edit),
     string.format("%" .. pad .. "s Clear All Items", mappings.clear_all_items),
     string.format("%" .. pad .. "s Delete mode", mappings.delete_mode),
-    string.format("%" .. pad .. "s Open Vertical", mappings.open_vertical),
-    string.format("%" .. pad .. "s Open Horizontal", mappings.open_horizontal),
     string.format("%" .. pad .. "s Next Item", mappings.next_item),
     string.format("%" .. pad .. "s Prev Item", mappings.prev_item),
     string.format("%" .. pad .. "s Quit", mappings.quit),
   }
 
-  if separate_save_and_remove then
-    table.insert(return_mappings, 1, string.format("%" .. pad .. "s Remove Current File", mappings.remove))
-    table.insert(return_mappings, 1, string.format("%" .. pad .. "s Save Current File", mappings.toggle))
-  else
-    if already_saved == true then
-      table.insert(return_mappings, 1, string.format("%" .. pad .. "s Remove Current File", mappings.toggle))
-    else
-      table.insert(return_mappings, 1, string.format("%" .. pad .. "s Save Current File", mappings.toggle))
+  for action_name, _ in pairs(config.actions) do
+    local action_key = mappings[action_name]
+    if action_key and action_name ~= "open" then
+      table.insert(menu_lines, 4, string.format("%" .. pad .. "s " .. action_name, action_key))
     end
   end
 
-  return return_mappings
+  if separate_save_and_remove then
+    table.insert(menu_lines, 1, string.format("%" .. pad .. "s Remove Current File", mappings.remove))
+    table.insert(menu_lines, 1, string.format("%" .. pad .. "s Save Current File", mappings.toggle))
+  else
+    if already_saved == true then
+      table.insert(menu_lines, 1, string.format("%" .. pad .. "s Remove Current File", mappings.toggle))
+    else
+      table.insert(menu_lines, 1, string.format("%" .. pad .. "s Save Current File", mappings.toggle))
+    end
+  end
+
+  return menu_lines
 end
 
 local function format_file_names(file_names)
@@ -180,7 +185,7 @@ local function createMenuBuffer(filename)
   local buf = vim.api.nvim_create_buf(false, true)
 
   vim.b[buf].filename = filename
-  vim.b[buf].arrow_current_mode = ""
+  vim.b[buf].arrow_current_action = ""
   renderBuffer(buf)
 
   return buf
@@ -196,7 +201,7 @@ local function render_highlights(buffer)
   vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowCurrentFile", current_index, 0, -1)
 
   for i, _ in ipairs(fileNames) do
-    if vim.b.arrow_current_mode == "delete_mode" then
+    if vim.b.arrow_current_action == "delete_mode" then
       vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", i, 3, 4)
     else
       vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowFileIndex", i, 3, 4)
@@ -214,40 +219,24 @@ local function render_highlights(buffer)
     vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", i - 1, 3, 3 + mapping_len)
   end
 
-  -- Find the line containing "d - Delete Mode"
-  local deleteModeLine = -1
-  local verticalModeLine = -1
-  local horizontalModelLine = -1
-
-  for i, action in ipairs(actionsMenu) do
-    if action:find(mappings.delete_mode .. " Delete mode") then
-      deleteModeLine = i - 1
+  if vim.b.arrow_current_action == "delete_mode" then
+    for i, action in ipairs(actionsMenu) do
+      if action:find(mappings.delete_mode .. " Delete mode") then
+        local deleteModeLine = i - 1
+        vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", #fileNames + deleteModeLine + 2, 0, -1)
+      end
     end
-
-    if action:find(mappings.open_vertical .. " Open Vertical") then
-      verticalModeLine = i - 1
-    end
-
-    if action:find(mappings.open_horizontal .. " Open Horizontal") then
-      horizontalModelLine = i - 1
-    end
-  end
-
-  if deleteModeLine >= 0 then
-    if vim.b.arrow_current_mode == "delete_mode" then
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", #fileNames + deleteModeLine + 2, 0, -1)
-    end
-  end
-
-  if verticalModeLine >= 0 then
-    if vim.b.arrow_current_mode == "vertical_mode" then
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", #fileNames + verticalModeLine + 2, 0, -1)
-    end
-  end
-
-  if horizontalModelLine >= 0 then
-    if vim.b.arrow_current_mode == "horizontal_mode" then
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", #fileNames + horizontalModelLine + 2, 0, -1)
+  elseif vim.b.arrow_current_action ~= nil and vim.b.arrow_current_action ~= "" then
+    -- if we're in an action mode, look for the matching action line and highlight it
+    local matching_action = config.actions[vim.b.arrow_current_action]
+    local matching_mapping = mappings[vim.b.arrow_current_action]
+    if matching_action and matching_mapping then
+      for i, action in ipairs(actionsMenu) do
+        if action:find(matching_mapping .. " " .. vim.b.arrow_current_action) then
+          local action_line = i - 1
+          vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", #fileNames + action_line + 2, 0, -1)
+        end
+      end
     end
   end
 
@@ -270,7 +259,7 @@ end
 function M.openFile(fileNumber)
   local fileName = vim.g.arrow_filenames[fileNumber]
 
-  if vim.b.arrow_current_mode == "delete_mode" then
+  if vim.b.arrow_current_action == "delete_mode" then
     persist.remove(fileName)
 
     fileNames = vim.g.arrow_filenames
@@ -288,12 +277,10 @@ function M.openFile(fileNumber)
 
     fileName = vim.fn.fnameescape(fileName)
 
-    if vim.b.arrow_current_mode == "" or not vim.b.arrow_current_mode then
-      action = config.open_action
-    elseif vim.b.arrow_current_mode == "vertical_mode" then
-      action = config.vertical_action
-    elseif vim.b.arrow_current_mode == "horizontal_mode" then
-      action = config.horizontal_action
+    if vim.b.arrow_current_action == "" or not vim.b.arrow_current_action then
+      action = config.actions.open
+    else
+      action = config.actions[vim.b.arrow_current_action]
     end
 
     closeMenu()
@@ -323,8 +310,13 @@ function M.getWindowConfig()
   local width = max_width + 12
   local height = #fileNames + 2
 
+  local num_actions = 0
+  for _, _ in pairs(config.actions) do
+    num_actions = num_actions + 1
+  end
+
   if show_handbook then
-    height = height + 10
+    height = height + 7 + num_actions
     if separate_save_and_remove then
       height = height + 1
     end
@@ -436,37 +428,30 @@ function M.openMenu(bufnr)
   vim.keymap.set("n", "<Esc>", closeMenu, menuKeymapOpts)
 
   vim.keymap.set("n", mappings.delete_mode, function()
-    if vim.b.arrow_current_mode == "delete_mode" then
-      vim.b.arrow_current_mode = ""
+    if vim.b.arrow_current_action == "delete_mode" then
+      vim.b.arrow_current_action = ""
     else
-      vim.b.arrow_current_mode = "delete_mode"
+      vim.b.arrow_current_action = "delete_mode"
     end
 
     renderBuffer(menuBuf)
     render_highlights(menuBuf)
   end, menuKeymapOpts)
 
-  vim.keymap.set("n", mappings.open_vertical, function()
-    if vim.b.arrow_current_mode == "vertical_mode" then
-      vim.b.arrow_current_mode = ""
-    else
-      vim.b.arrow_current_mode = "vertical_mode"
+  for mapping_name, mapping_key in pairs(mappings) do
+    if config.actions[mapping_name] then
+      vim.keymap.set("n", mapping_key, function()
+        if vim.b.arrow_current_action == mapping_name then
+          vim.b.arrow_current_action = ""
+        else
+          vim.b.arrow_current_action = mapping_name
+        end
+
+        renderBuffer(menuBuf)
+        render_highlights(menuBuf)
+      end, menuKeymapOpts)
     end
-
-    renderBuffer(menuBuf)
-    render_highlights(menuBuf)
-  end, menuKeymapOpts)
-
-  vim.keymap.set("n", mappings.open_horizontal, function()
-    if vim.b.arrow_current_mode == "horizontal_mode" then
-      vim.b.arrow_current_mode = ""
-    else
-      vim.b.arrow_current_mode = "horizontal_mode"
-    end
-
-    renderBuffer(menuBuf)
-    render_highlights(menuBuf)
-  end, menuKeymapOpts)
+  end
 
   vim.api.nvim_set_hl(0, "ArrowCursor", { nocombine = true, blend = 100 })
   vim.opt.guicursor:append("a:ArrowCursor/ArrowCursor")

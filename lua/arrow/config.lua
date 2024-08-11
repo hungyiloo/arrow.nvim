@@ -28,8 +28,8 @@ M.mappings = {
   delete_mode = "d",
   clear_all_items = "C",
   toggle = "s",
-  open_vertical = "v",
-  open_horizontal = "h",
+  ["Open Vertical"] = "v",
+  ["Open Horizontal"] = "h",
   quit = "q",
   remove = "x",
   next_item = "]",
@@ -38,27 +38,27 @@ M.mappings = {
 
 M.index_keys = "123456789zcbnmZXVBNM,afghjklAFGHJKLwrtyuiopWRTYUIOP"
 
----@type fun(target_file_name: string, current_file_name: string)
-M.open_action = function(filename, _)
-  vim.cmd(string.format(":edit %s", filename))
-end
+---@type table<string, fun(target_file_name: string, current_file_name: string)>
+M.actions = {
+  open = function(filename)
+    vim.cmd("edit " .. filename)
+  end,
 
----@type fun(target_file_name: string, current_file_name: string)
-M.vertical_action = function(filename, _)
-  vim.cmd(string.format(":vsplit %s", filename))
-end
+  ["Open Vertical"] = function(filename)
+    vim.cmd("vsplit " .. filename)
+  end,
 
----@type fun(target_file_name: string, current_file_name: string)
-M.horizontal_action = function(filename, _)
-  vim.cmd(string.format(":split %s", filename))
-end
+  ["Open Horizontal"] = function(filename)
+    vim.cmd("vsplit " .. filename)
+  end,
+}
 
 M.save_path = function()
   return vim.fn.stdpath("cache") .. "/arrow"
 end
 
 ---@type fun(): string
-M.save_key = function ()
+M.save_key = function()
   return vim.uv.cwd() or ""
 end
 

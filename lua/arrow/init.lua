@@ -5,7 +5,6 @@ local config = require("arrow.config")
 local git = require("arrow.git")
 local persist = require("arrow.persist")
 local save_keys = require("arrow.save_keys")
-local ui = require("arrow.ui")
 local utils = require("arrow.utils")
 
 function M.setup(opts)
@@ -21,10 +20,7 @@ function M.setup(opts)
   config.per_buffer_config = utils.join_two_keys_tables(config.per_buffer_config, opts.per_buffer_config or {})
 
   ---@type table<string, fun(target_file_name: string, current_file_name: string)>
-  local actions = opts.custom_actions or {}
-  config.open_action = actions.open or config.open_action
-  config.vertical_action = actions.split_vertical or config.vertical_action
-  config.horizontal_action = actions.split_horizontal or config.horizontal_action
+  config.actions = utils.join_two_keys_tables(config.actions, opts.actions or {})
 
   config.save_path = opts.save_path or config.save_path
   config.always_show_path = opts.always_show_path ~= nil and opts.always_show_path or config.always_show_path
