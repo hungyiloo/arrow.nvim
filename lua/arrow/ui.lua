@@ -5,15 +5,16 @@ local git = require("arrow.git")
 local persist = require("arrow.persist")
 local utils = require("arrow.utils")
 
-local fileNames = {}
+local filenames = {}
 local to_highlight = {}
 
 local current_index = 0
+local window_padding = 3
 
-local function max_mapping_length()
+local function max_mapping_key_length()
   local max_len = 0
-  for _, mapping in pairs(config.mappings) do
-    local len = string.len(mapping)
+  for _, mapping_key in pairs(config.mappings) do
+    local len = string.len(mapping_key)
     if len > max_len then
       max_len = len
     end
@@ -21,10 +22,10 @@ local function max_mapping_length()
   return max_len
 end
 
-local function getActionsMenu()
+local function get_actions_menu()
   local mappings = config.mappings
 
-  local pad = max_mapping_length()
+  local pad = max_mapping_key_length()
 
   if #vim.g.arrow_filenames == 0 then
     return {
@@ -66,7 +67,7 @@ local function getActionsMenu()
   return menu_lines
 end
 
-local function format_file_names(file_names)
+local function format_filenames(file_names)
   local formatted_names = {}
 
   -- Table to count occurrences of file names
@@ -115,14 +116,14 @@ local function get_file_icon(file_name)
   return icon, hl_group
 end
 
-local function renderBuffer(buffer)
+local function render_buffer(buffer)
   vim.api.nvim_set_option_value("modifiable", true, { buf = buffer })
 
   local icons = config.show_icons
   local buf = buffer or vim.api.nvim_get_current_buf()
   local lines = { "" }
 
-  local formattedFleNames = format_file_names(fileNames)
+  local formattedFleNames = format_filenames(filenames)
 
   to_highlight = {}
   current_index = 0
@@ -132,10 +133,10 @@ local function renderBuffer(buffer)
 
     vim.api.nvim_buf_add_highlight(buf, -1, "ArrowDeleteMode", i + 3, 0, -1)
 
-    local parsed_filename = fileNames[i]
+    local parsed_filename = filenames[i]
 
-    if fileNames[i]:sub(1, 2) == "./" then
-      parsed_filename = fileNames[i]:sub(3)
+    if filenames[i]:sub(1, 2) == "./" then
+      parsed_filename = filenames[i]:sub(3)
     end
 
     if parsed_filename == vim.b[buf].filename then
@@ -147,7 +148,7 @@ local function renderBuffer(buffer)
     end, { noremap = true, silent = true, buffer = buf, nowait = true })
 
     if icons then
-      local icon, hl_group = get_file_icon(fileNames[i])
+      local icon, hl_group = get_file_icon(filenames[i])
 
       to_highlight[i] = hl_group
 
@@ -159,17 +160,17 @@ local function renderBuffer(buffer)
 
   -- Add a separator
   if #vim.g.arrow_filenames == 0 then
-    table.insert(lines, "   No files yet.")
+    table.insert(lines, string.rep(" ", window_padding) .. "No files yet.")
   end
 
   table.insert(lines, "")
 
-  local actionsMenu = getActionsMenu()
+  local actionsMenu = get_actions_menu()
 
   -- Add actions to the menu
   if not config.hide_handbook then
     for _, action in ipairs(actionsMenu) do
-      table.insert(lines, "   " .. action)
+      table.insert(lines, string.rep(" ", window_padding) .. action)
     end
   end
 
@@ -186,13 +187,13 @@ local function createMenuBuffer(filename)
 
   vim.b[buf].filename = filename
   vim.b[buf].arrow_current_action = ""
-  renderBuffer(buf)
+  render_buffer(buf)
 
   return buf
 end
 
 local function render_highlights(buffer)
-  local actionsMenu = getActionsMenu()
+  local actionsMenu = get_actions_menu()
   local mappings = config.mappings
 
   vim.api.nvim_buf_clear_namespace(buffer, -1, 0, -1)
@@ -200,11 +201,11 @@ local function render_highlights(buffer)
 
   vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowCurrentFile", current_index, 0, -1)
 
-  for i, _ in ipairs(fileNames) do
+  for i, _ in ipairs(filenames) do
     if vim.b.arrow_current_action == "delete_mode" then
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", i, 3, 4)
+      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", i, window_padding, window_padding + #mappings.delete_mode)
     else
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowFileIndex", i, 3, 4)
+      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowFileIndex", i, window_padding, window_padding + #mappings.delete_mode)
     end
   end
 
@@ -214,16 +215,16 @@ local function render_highlights(buffer)
     end
   end
 
-  local mapping_len = max_mapping_length()
-  for i = #fileNames + 3, #fileNames + #actionsMenu + 3 do
-    vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", i - 1, 3, 3 + mapping_len)
+  local mapping_len = max_mapping_key_length()
+  for i = #filenames, #filenames + #actionsMenu do
+    vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", i + 2, window_padding, window_padding + mapping_len)
   end
 
   if vim.b.arrow_current_action == "delete_mode" then
     for i, action in ipairs(actionsMenu) do
       if action:find(mappings.delete_mode .. " Delete mode") then
         local deleteModeLine = i - 1
-        vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", #fileNames + deleteModeLine + 2, 0, -1)
+        vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", #filenames + deleteModeLine + 2, 0, -1)
       end
     end
   elseif vim.b.arrow_current_action ~= nil and vim.b.arrow_current_action ~= "" then
@@ -234,7 +235,7 @@ local function render_highlights(buffer)
       for i, action in ipairs(actionsMenu) do
         if action:find(matching_mapping .. " " .. vim.b.arrow_current_action) then
           local action_line = i - 1
-          vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", #fileNames + action_line + 2, 0, -1)
+          vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", #filenames + action_line + 2, 0, -1)
         end
       end
     end
@@ -243,7 +244,7 @@ local function render_highlights(buffer)
   local pattern = "%s%s%s%s%S.*$"
   local line_number = 1
 
-  while line_number <= #fileNames + 1 do
+  while line_number <= #filenames + 1 do
     local line_content = vim.api.nvim_buf_get_lines(menuBuf, line_number - 1, line_number, false)[1]
 
     local match_start, match_end = string.find(line_content, pattern)
@@ -262,9 +263,9 @@ function M.openFile(fileNumber)
   if vim.b.arrow_current_action == "delete_mode" then
     persist.remove(fileName)
 
-    fileNames = vim.g.arrow_filenames
+    filenames = vim.g.arrow_filenames
 
-    renderBuffer(vim.api.nvim_get_current_buf())
+    render_buffer(vim.api.nvim_get_current_buf())
     render_highlights(vim.api.nvim_get_current_buf())
   else
     if not fileName then
@@ -289,69 +290,52 @@ function M.openFile(fileNumber)
   end
 end
 
-function M.getWindowConfig()
+function M.get_window_config()
   local show_handbook = not config.hide_handbook
-  local parsedFileNames = format_file_names(fileNames)
+  local parsed_filenames = format_filenames(filenames)
   local separate_save_and_remove = config.separate_save_and_remove
 
-  local max_width = 0
+  -- Calculate the width of the window based on the max length of the
+  -- filenames and the max length of the actions menu lines
+  local width = 13 -- at least enough for the "no files yet" message
+  local actions_menu = get_actions_menu()
+  for _, actions_menu_line in pairs(actions_menu) do
+    if #actions_menu_line > width then
+      width = #actions_menu_line
+    end
+  end
+  for _, filename in pairs(parsed_filenames) do
+    if #filename > width then
+      width = #filename
+    end
+  end
+  width = width + window_padding*2 -- add some padding
+
+  local height = math.max(3, #filenames + 2)
   if show_handbook then
-    max_width = 13 + max_mapping_length() - 1
-    if separate_save_and_remove then
-      max_width = max_width + 2
-    end
-  end
-  for _, v in pairs(parsedFileNames) do
-    if #v > max_width then
-      max_width = #v
-    end
+    height = height + 1 + #actions_menu
   end
 
-  local width = max_width + 12
-  local height = #fileNames + 2
-
-  local num_actions = 0
-  for _, _ in pairs(config.actions) do
-    num_actions = num_actions + 1
-  end
-
-  if show_handbook then
-    height = height + 7 + num_actions
-    if separate_save_and_remove then
-      height = height + 1
-    end
-  end
-
-  local current_config = {
+  local auto_window = {
     width = width,
     height = height,
     row = math.ceil((vim.o.lines - height) / 2),
     col = math.ceil((vim.o.columns - width) / 2),
   }
 
-  local is_empty = #vim.g.arrow_filenames == 0
-
-  if is_empty and show_handbook then
-    current_config.height = 5
-    current_config.width = 18
-  elseif is_empty then
-    current_config.height = 3
-    current_config.width = 18
-  end
-
-  local res = vim.tbl_deep_extend("force", current_config, config.window)
+  local res = vim.tbl_deep_extend("force", auto_window, config.window)
 
   if res.width == "auto" then
-    res.width = current_config.width
+    res.width = auto_window.width
   end
   if res.height == "auto" then
-    res.height = current_config.height
+    res.height = auto_window.height
   end
   if res.row == "auto" then
-    res.row = current_config.row
+    res.row = auto_window.row
   end
   if res.col == "auto" then
-    res.col = current_config.col
+    res.col = auto_window.col
   end
 
   return res
@@ -368,12 +352,12 @@ function M.openMenu(bufnr)
   end
 
   to_highlight = {}
-  fileNames = vim.g.arrow_filenames
+  filenames = vim.g.arrow_filenames
   local filename = utils.get_current_buffer_path()
 
   local menuBuf = createMenuBuffer(filename)
 
-  local window_config = M.getWindowConfig()
+  local window_config = M.get_window_config()
 
   local win = vim.api.nvim_open_win(menuBuf, true, window_config)
 
@@ -434,7 +418,7 @@ function M.openMenu(bufnr)
       vim.b.arrow_current_action = "delete_mode"
     end
 
-    renderBuffer(menuBuf)
+    render_buffer(menuBuf)
     render_highlights(menuBuf)
   end, menuKeymapOpts)
 
@@ -447,7 +431,7 @@ function M.openMenu(bufnr)
           vim.b.arrow_current_action = mapping_name
         end
 
-        renderBuffer(menuBuf)
+        render_buffer(menuBuf)
         render_highlights(menuBuf)
       end, menuKeymapOpts)
     end
