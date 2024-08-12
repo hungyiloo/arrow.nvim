@@ -18,7 +18,7 @@ end
 
 M.commands = {
   open = function()
-    ui.openMenu()
+    ui.open_menu()
   end,
   next_buffer = function()
     persist.next()

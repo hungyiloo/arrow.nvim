@@ -34,8 +34,6 @@ local function notify()
   })
 end
 
-vim.g.arrow_filenames = {}
-
 function M.save(filename)
   if not M.is_saved(filename) then
     local new_table = vim.g.arrow_filenames

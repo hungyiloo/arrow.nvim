@@ -5,11 +5,10 @@ local git = require("arrow.git")
 local persist = require("arrow.persist")
 local utils = require("arrow.utils")
 
-local filenames = {}
-local to_highlight = {}
-local window_padding = 3
+local PADDING = 3
 ---@type integer|nil
-local current_buf = nil
+local caller_buf = nil
+local is_menu_open = false
 
 local function max_mapping_key_length()
   local max_len = 0
@@ -22,12 +21,14 @@ local function max_mapping_key_length()
   return max_len
 end
 
-local function current_index()
-  if not current_buf then
+-- Gets the caller buffer file index in the arrow save list,
+-- returns 0 if the caller buffer file isn't in the save list
+local function caller_current_index()
+  if not caller_buf then
     return 0
   end
-  for i, filename in pairs(filenames) do
-    if utils.get_buffer_path(current_buf) == filename then
+  for i, filename in pairs(vim.g.arrow_filenames) do
+    if utils.get_buffer_path(caller_buf) == filename then
       return i
     end
   end
@@ -45,7 +46,7 @@ local function get_actions_menu()
     }
   end
 
-  local already_saved = current_index() > 0
+  local already_saved = caller_current_index() > 0
 
   local separate_save_and_remove = config.separate_save_and_remove
 
@@ -112,7 +113,7 @@ local function format_filenames(file_names)
 end
 
 -- Function to close the menu and open the selected file
-local function closeMenu()
+local function close_menu()
   local win = vim.fn.win_getid()
   vim.api.nvim_win_close(win, true)
 end
@@ -131,14 +132,15 @@ end
 local function get_filenames_menu()
   local icons = config.show_icons
   local lines = {}
+  local to_highlight = {}
 
-  local formatted_filenames = format_filenames(filenames)
+  local formatted_filenames = format_filenames(vim.g.arrow_filenames)
 
   for i, file_name in ipairs(formatted_filenames) do
     local index_key = config.index_keys:sub(i, i)
 
     if icons then
-      local icon, hl_group = get_file_icon(filenames[i])
+      local icon, hl_group = get_file_icon(vim.g.arrow_filenames[i])
       to_highlight[i] = hl_group
       file_name = icon .. " " .. file_name
     end
@@ -150,35 +152,21 @@ local function get_filenames_menu()
     table.insert(lines, "No files yet.")
   end
 
-  return lines
+  return lines, to_highlight
 end
 
-local function render_highlights(menu_buf)
+local function render_highlights(menu_buf, to_highlight)
   local actions_menu = get_actions_menu()
   local mappings = config.mappings
 
   vim.api.nvim_buf_clear_namespace(menu_buf, -1, 0, -1)
-  vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowCurrentFile", current_index(), 0, -1)
+  vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowCurrentFile", caller_current_index(), 0, -1)
 
-  for i, _ in ipairs(filenames) do
+  for i, _ in ipairs(vim.g.arrow_filenames) do
     if vim.b.arrow_current_action == "delete_mode" then
-      vim.api.nvim_buf_add_highlight(
-        menu_buf,
-        -1,
-        "ArrowDeleteMode",
-        i,
-        window_padding,
-        window_padding + #mappings.delete_mode
-      )
+      vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowDeleteMode", i, PADDING, PADDING + #mappings.delete_mode)
     else
-      vim.api.nvim_buf_add_highlight(
-        menu_buf,
-        -1,
-        "ArrowFileIndex",
-        i,
-        window_padding,
-        window_padding + #mappings.delete_mode
-      )
+      vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowFileIndex", i, PADDING, PADDING + #mappings.delete_mode)
     end
   end
 
@@ -189,15 +177,22 @@ local function render_highlights(menu_buf)
   end
 
   local mapping_len = max_mapping_key_length()
-  for i = #filenames, #filenames + #actions_menu do
-    vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowAction", i + 2, window_padding, window_padding + mapping_len)
+  for i = #vim.g.arrow_filenames, #vim.g.arrow_filenames + #actions_menu do
+    vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowAction", i + 2, PADDING, PADDING + mapping_len)
   end
 
   if vim.b.arrow_current_action == "delete_mode" then
     for i, action in ipairs(actions_menu) do
       if action:find(mappings.delete_mode .. " Delete mode") then
         local deleteModeLine = i - 1
-        vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowDeleteMode", #filenames + deleteModeLine + 2, 0, -1)
+        vim.api.nvim_buf_add_highlight(
+          menu_buf,
+          -1,
+          "ArrowDeleteMode",
+          #vim.g.arrow_filenames + deleteModeLine + 2,
+          0,
+          -1
+        )
       end
     end
   elseif vim.b.arrow_current_action ~= nil and vim.b.arrow_current_action ~= "" then
@@ -208,7 +203,7 @@ local function render_highlights(menu_buf)
       for i, action in ipairs(actions_menu) do
         if action:find(matching_mapping .. " " .. vim.b.arrow_current_action) then
           local action_line = i - 1
-          vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowAction", #filenames + action_line + 2, 0, -1)
+          vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowAction", #vim.g.arrow_filenames + action_line + 2, 0, -1)
         end
       end
     end
@@ -217,7 +212,7 @@ local function render_highlights(menu_buf)
   local pattern = "%s%s%s%s%S.*$"
   local line_number = 1
 
-  while line_number <= #filenames + 1 do
+  while line_number <= #vim.g.arrow_filenames + 1 do
     local line_content = vim.api.nvim_buf_get_lines(menu_buf, line_number - 1, line_number, false)[1]
 
     local match_start, match_end = string.find(line_content, pattern)
@@ -232,18 +227,14 @@ end
 local function render_buffer(menu_buf)
   vim.api.nvim_set_option_value("modifiable", true, { buf = menu_buf })
 
-  -- reset highlight state
-  -- TODO: this shouldn't rely on a global...
-  to_highlight = {}
-
   -- Start building the buffer lines to render
   local lines = { "" }
-  local filenames_menu = get_filenames_menu()
+  local filenames_menu, to_highlight = get_filenames_menu()
   local actions_menu = get_actions_menu()
 
   -- Add filenames to the menu
   for _, filename in ipairs(filenames_menu) do
-    table.insert(lines, string.rep(" ", window_padding) .. filename)
+    table.insert(lines, string.rep(" ", PADDING) .. filename)
   end
 
   -- Add a separator
@@ -252,7 +243,7 @@ local function render_buffer(menu_buf)
   -- Add actions to the menu
   if not config.hide_handbook then
     for _, action in ipairs(actions_menu) do
-      table.insert(lines, string.rep(" ", window_padding) .. action)
+      table.insert(lines, string.rep(" ", PADDING) .. action)
     end
   end
 
@@ -266,16 +257,35 @@ local function render_buffer(menu_buf)
   for i, filename in pairs(filenames_menu) do
     local index_key = filename:sub(1, 1)
     vim.keymap.set("n", index_key, function()
-      M.openFile(i)
+      M.open_file(i)
     end, { noremap = true, silent = true, buffer = menu_buf, nowait = true })
   end
 
-  render_highlights(menu_buf)
+  render_highlights(menu_buf, to_highlight)
 end
 
--- Function to create the menu buffer with a list format
-local function createMenuBuffer(filename)
+local function create_menu_buffer(filename)
   local menu_buf = vim.api.nvim_create_buf(false, true)
+
+  vim.api.nvim_create_autocmd("BufEnter", {
+    buffer = menu_buf,
+    desc = "Disable cursor after entering Arrow",
+    callback = function()
+      vim.api.nvim_set_hl(0, "ArrowCursor", { nocombine = true, blend = 100 })
+      vim.opt.guicursor:append("a:ArrowCursor/ArrowCursor")
+    end,
+  })
+
+  vim.api.nvim_create_autocmd("BufLeave", {
+    buffer = menu_buf,
+    desc = "Reenable cursor after leaving Arrow",
+    callback = function()
+      vim.cmd("highlight clear ArrowCursor")
+      vim.schedule(function()
+        vim.opt.guicursor:remove("a:ArrowCursor/ArrowCursor")
+      end)
+    end,
+  })
 
   vim.b[menu_buf].filename = filename
   vim.b[menu_buf].arrow_current_action = ""
@@ -284,13 +294,12 @@ local function createMenuBuffer(filename)
   return menu_buf
 end
 
--- Function to open the selected file
-function M.openFile(fileNumber)
+-- handles user selection of a file in the arrow save list
+function M.open_file(fileNumber)
   local fileName = vim.g.arrow_filenames[fileNumber]
 
   if vim.b.arrow_current_action == "delete_mode" then
     persist.remove(fileName)
-    filenames = vim.g.arrow_filenames
     render_buffer(vim.api.nvim_get_current_buf())
   else
     if not fileName then
@@ -307,7 +316,7 @@ function M.openFile(fileNumber)
       action = config.actions[vim.b.arrow_current_action]
     end
 
-    closeMenu()
+    close_menu()
     action(fileName, vim.b.filename)
   end
 end
@@ -317,7 +326,7 @@ function M.get_window_config()
 
   -- Calculate the width of the window based on the max length of the
   -- filenames and the max length of the actions menu lines
-  local width = 13 -- at least enough for the "no files yet" message
+  local width = 0
   local actions_menu = get_actions_menu()
   for _, actions_menu_line in pairs(actions_menu) do
     if #actions_menu_line > width then
@@ -327,15 +336,15 @@ function M.get_window_config()
 
   local filenames_menu = get_filenames_menu()
   for _, filename in pairs(filenames_menu) do
-    if #filename - window_padding > width then
+    if #filename - PADDING > width then
       -- why do we need to subtract window_padding here?
       -- if we don't, filenames are double padded on the right hand side (?!)
-      width = #filename - window_padding
+      width = #filename - PADDING
     end
   end
-  width = width + window_padding * 2 -- add some padding
+  width = width + PADDING * 2 -- add some padding
 
-  local height = math.max(3, #filenames + 2)
+  local height = math.max(3, #vim.g.arrow_filenames + 2)
   if show_handbook then
     height = height + 1 + #actions_menu
   end
@@ -366,65 +375,67 @@ function M.get_window_config()
 end
 
 ---@type fun(bufnr?: integer)
-function M.openMenu(bufnr)
-  git.refresh_git_branch()
+function M.open_menu(bufnr)
+  if is_menu_open then
+    return
+  end
 
-  current_buf = bufnr or vim.api.nvim_get_current_buf()
+  git.refresh_git_branch()
+  caller_buf = bufnr or vim.api.nvim_get_current_buf()
 
   if vim.g.arrow_filenames == 0 then
     persist.load_cache_file()
   end
 
-  to_highlight = {}
-  filenames = vim.g.arrow_filenames
-
   local filename = utils.get_current_buffer_path()
-  local menu_buf = createMenuBuffer(filename)
+  local menu_buf = create_menu_buffer(filename)
   local window_config = M.get_window_config()
   local win = vim.api.nvim_open_win(menu_buf, true, window_config)
+  is_menu_open = true
+
   local mappings = config.mappings
   local separate_save_and_remove = config.separate_save_and_remove
-  local menuKeymapOpts = { noremap = true, silent = true, buffer = menu_buf, nowait = true }
+  local menu_keymap_opts = { noremap = true, silent = true, buffer = menu_buf, nowait = true }
 
-  vim.keymap.set("n", mappings.quit, closeMenu, menuKeymapOpts)
+  vim.keymap.set("n", mappings.quit, close_menu, menu_keymap_opts)
   vim.keymap.set("n", mappings.edit, function()
-    closeMenu()
+    close_menu()
     persist.open_cache_file_editor()
-  end, menuKeymapOpts)
+  end, menu_keymap_opts)
 
   if separate_save_and_remove then
     vim.keymap.set("n", mappings.toggle, function()
       persist.save(filename)
-      closeMenu()
-    end, menuKeymapOpts)
+      close_menu()
+    end, menu_keymap_opts)
 
     vim.keymap.set("n", mappings.remove, function()
       persist.remove(filename)
-      closeMenu()
-    end, menuKeymapOpts)
+      close_menu()
+    end, menu_keymap_opts)
   else
     vim.keymap.set("n", mappings.toggle, function()
       persist.toggle(filename)
-      closeMenu()
-    end, menuKeymapOpts)
+      close_menu()
+    end, menu_keymap_opts)
   end
 
   vim.keymap.set("n", mappings.clear_all_items, function()
     persist.clear()
-    closeMenu()
-  end, menuKeymapOpts)
+    close_menu()
+  end, menu_keymap_opts)
 
   vim.keymap.set("n", mappings.next_item, function()
-    closeMenu()
+    close_menu()
     persist.next()
-  end, menuKeymapOpts)
+  end, menu_keymap_opts)
 
   vim.keymap.set("n", mappings.prev_item, function()
-    closeMenu()
+    close_menu()
     persist.previous()
-  end, menuKeymapOpts)
+  end, menu_keymap_opts)
 
-  vim.keymap.set("n", "<Esc>", closeMenu, menuKeymapOpts)
+  vim.keymap.set("n", "<Esc>", close_menu, menu_keymap_opts)
 
   vim.keymap.set("n", mappings.delete_mode, function()
     if vim.b.arrow_current_action == "delete_mode" then
@@ -434,7 +445,7 @@ function M.openMenu(bufnr)
     end
 
     render_buffer(menu_buf)
-  end, menuKeymapOpts)
+  end, menu_keymap_opts)
 
   for mapping_name, mapping_key in pairs(mappings) do
     if config.actions[mapping_name] then
@@ -446,22 +457,17 @@ function M.openMenu(bufnr)
         end
 
         render_buffer(menu_buf)
-      end, menuKeymapOpts)
+      end, menu_keymap_opts)
     end
   end
 
-  vim.api.nvim_set_hl(0, "ArrowCursor", { nocombine = true, blend = 100 })
-  vim.opt.guicursor:append("a:ArrowCursor/ArrowCursor")
-
-  vim.api.nvim_create_autocmd("BufLeave", {
-    buffer = 0,
-    desc = "Disable Cursor",
+  vim.api.nvim_create_autocmd("WinClosed", {
+    buffer = menu_buf,
+    desc = "Cleanup Arrow state after closing UI",
     once = true,
     callback = function()
-      vim.cmd("highlight clear ArrowCursor")
-      vim.schedule(function()
-        vim.opt.guicursor:remove("a:ArrowCursor/ArrowCursor")
-      end)
+      is_menu_open = false
+      caller_buf = nil
     end,
   })
 
