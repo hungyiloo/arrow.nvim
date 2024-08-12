@@ -150,18 +150,16 @@ local function get_filenames_menu()
 end
 
 local function render_highlights(current_buf, menu_buf)
-  local actionsMenu = get_actions_menu()
+  local actions_menu = get_actions_menu()
   local mappings = config.mappings
 
   vim.api.nvim_buf_clear_namespace(menu_buf, -1, 0, -1)
-  local menuBuf = menu_buf or vim.api.nvim_get_current_buf()
-
-  vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowCurrentFile", current_index(current_buf), 0, -1)
+  vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowCurrentFile", current_index(current_buf), 0, -1)
 
   for i, _ in ipairs(filenames) do
     if vim.b.arrow_current_action == "delete_mode" then
       vim.api.nvim_buf_add_highlight(
-        menuBuf,
+        menu_buf,
         -1,
         "ArrowDeleteMode",
         i,
@@ -170,7 +168,7 @@ local function render_highlights(current_buf, menu_buf)
       )
     else
       vim.api.nvim_buf_add_highlight(
-        menuBuf,
+        menu_buf,
         -1,
         "ArrowFileIndex",
         i,
@@ -182,20 +180,20 @@ local function render_highlights(current_buf, menu_buf)
 
   if config.show_icons then
     for k, v in pairs(to_highlight) do
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, v, k, 5, 8)
+      vim.api.nvim_buf_add_highlight(menu_buf, -1, v, k, 5, 8)
     end
   end
 
   local mapping_len = max_mapping_key_length()
-  for i = #filenames, #filenames + #actionsMenu do
-    vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", i + 2, window_padding, window_padding + mapping_len)
+  for i = #filenames, #filenames + #actions_menu do
+    vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowAction", i + 2, window_padding, window_padding + mapping_len)
   end
 
   if vim.b.arrow_current_action == "delete_mode" then
-    for i, action in ipairs(actionsMenu) do
+    for i, action in ipairs(actions_menu) do
       if action:find(mappings.delete_mode .. " Delete mode") then
         local deleteModeLine = i - 1
-        vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowDeleteMode", #filenames + deleteModeLine + 2, 0, -1)
+        vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowDeleteMode", #filenames + deleteModeLine + 2, 0, -1)
       end
     end
   elseif vim.b.arrow_current_action ~= nil and vim.b.arrow_current_action ~= "" then
@@ -203,10 +201,10 @@ local function render_highlights(current_buf, menu_buf)
     local matching_action = config.actions[vim.b.arrow_current_action]
     local matching_mapping = mappings[vim.b.arrow_current_action]
     if matching_action and matching_mapping then
-      for i, action in ipairs(actionsMenu) do
+      for i, action in ipairs(actions_menu) do
         if action:find(matching_mapping .. " " .. vim.b.arrow_current_action) then
           local action_line = i - 1
-          vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowAction", #filenames + action_line + 2, 0, -1)
+          vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowAction", #filenames + action_line + 2, 0, -1)
         end
       end
     end
@@ -216,11 +214,11 @@ local function render_highlights(current_buf, menu_buf)
   local line_number = 1
 
   while line_number <= #filenames + 1 do
-    local line_content = vim.api.nvim_buf_get_lines(menuBuf, line_number - 1, line_number, false)[1]
+    local line_content = vim.api.nvim_buf_get_lines(menu_buf, line_number - 1, line_number, false)[1]
 
     local match_start, match_end = string.find(line_content, pattern)
     if match_start and match_end then
-      vim.api.nvim_buf_add_highlight(menuBuf, -1, "ArrowLocation", line_number - 1, match_start - 1, match_end)
+      vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowLocation", line_number - 1, match_start - 1, match_end)
     end
 
     line_number = line_number + 1
