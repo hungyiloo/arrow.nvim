@@ -8,6 +8,8 @@ local utils = require("arrow.utils")
 local filenames = {}
 local to_highlight = {}
 local window_padding = 3
+---@type integer|nil
+local current_buf = nil
 
 local function max_mapping_key_length()
   local max_len = 0
@@ -20,10 +22,12 @@ local function max_mapping_key_length()
   return max_len
 end
 
-local function current_index(bufnr)
-  bufnr = bufnr or vim.api.nvim_get_current_buf()
+local function current_index()
+  if not current_buf then
+    return 0
+  end
   for i, filename in pairs(filenames) do
-    if utils.get_buffer_path(bufnr) == filename then
+    if utils.get_buffer_path(current_buf) == filename then
       return i
     end
   end
@@ -149,12 +153,12 @@ local function get_filenames_menu()
   return lines
 end
 
-local function render_highlights(current_buf, menu_buf)
+local function render_highlights(menu_buf)
   local actions_menu = get_actions_menu()
   local mappings = config.mappings
 
   vim.api.nvim_buf_clear_namespace(menu_buf, -1, 0, -1)
-  vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowCurrentFile", current_index(current_buf), 0, -1)
+  vim.api.nvim_buf_add_highlight(menu_buf, -1, "ArrowCurrentFile", current_index(), 0, -1)
 
   for i, _ in ipairs(filenames) do
     if vim.b.arrow_current_action == "delete_mode" then
@@ -266,18 +270,18 @@ local function render_buffer(menu_buf)
     end, { noremap = true, silent = true, buffer = menu_buf, nowait = true })
   end
 
-  render_highlights(vim.api.nvim_get_current_buf(), menu_buf)
+  render_highlights(menu_buf)
 end
 
 -- Function to create the menu buffer with a list format
 local function createMenuBuffer(filename)
-  local buf = vim.api.nvim_create_buf(false, true)
+  local menu_buf = vim.api.nvim_create_buf(false, true)
 
-  vim.b[buf].filename = filename
-  vim.b[buf].arrow_current_action = ""
-  render_buffer(buf)
+  vim.b[menu_buf].filename = filename
+  vim.b[menu_buf].arrow_current_action = ""
+  render_buffer(menu_buf)
 
-  return buf
+  return menu_buf
 end
 
 -- Function to open the selected file
@@ -286,19 +290,15 @@ function M.openFile(fileNumber)
 
   if vim.b.arrow_current_action == "delete_mode" then
     persist.remove(fileName)
-
     filenames = vim.g.arrow_filenames
-
     render_buffer(vim.api.nvim_get_current_buf())
   else
     if not fileName then
       print("Invalid file number")
-
       return
     end
 
     local action
-
     fileName = vim.fn.fnameescape(fileName)
 
     if vim.b.arrow_current_action == "" or not vim.b.arrow_current_action then
@@ -308,7 +308,6 @@ function M.openFile(fileNumber)
     end
 
     closeMenu()
-
     action(fileName, vim.b.filename)
   end
 end
@@ -370,7 +369,7 @@ end
 function M.openMenu(bufnr)
   git.refresh_git_branch()
 
-  local call_buffer = bufnr or vim.api.nvim_get_current_buf()
+  current_buf = bufnr or vim.api.nvim_get_current_buf()
 
   if vim.g.arrow_filenames == 0 then
     persist.load_cache_file()
@@ -378,19 +377,14 @@ function M.openMenu(bufnr)
 
   to_highlight = {}
   filenames = vim.g.arrow_filenames
+
   local filename = utils.get_current_buffer_path()
-
-  local menuBuf = createMenuBuffer(filename)
-
+  local menu_buf = createMenuBuffer(filename)
   local window_config = M.get_window_config()
-
-  local win = vim.api.nvim_open_win(menuBuf, true, window_config)
-
+  local win = vim.api.nvim_open_win(menu_buf, true, window_config)
   local mappings = config.mappings
-
   local separate_save_and_remove = config.separate_save_and_remove
-
-  local menuKeymapOpts = { noremap = true, silent = true, buffer = menuBuf, nowait = true }
+  local menuKeymapOpts = { noremap = true, silent = true, buffer = menu_buf, nowait = true }
 
   vim.keymap.set("n", mappings.quit, closeMenu, menuKeymapOpts)
   vim.keymap.set("n", mappings.edit, function()
@@ -400,15 +394,11 @@ function M.openMenu(bufnr)
 
   if separate_save_and_remove then
     vim.keymap.set("n", mappings.toggle, function()
-      filename = filename or utils.get_current_buffer_path()
-
       persist.save(filename)
       closeMenu()
     end, menuKeymapOpts)
 
     vim.keymap.set("n", mappings.remove, function()
-      filename = filename or utils.get_current_buffer_path()
-
       persist.remove(filename)
       closeMenu()
     end, menuKeymapOpts)
@@ -443,7 +433,7 @@ function M.openMenu(bufnr)
       vim.b.arrow_current_action = "delete_mode"
     end
 
-    render_buffer(menuBuf)
+    render_buffer(menu_buf)
   end, menuKeymapOpts)
 
   for mapping_name, mapping_key in pairs(mappings) do
@@ -455,7 +445,7 @@ function M.openMenu(bufnr)
           vim.b.arrow_current_action = mapping_name
         end
 
-        render_buffer(menuBuf)
+        render_buffer(menu_buf)
       end, menuKeymapOpts)
     end
   end
