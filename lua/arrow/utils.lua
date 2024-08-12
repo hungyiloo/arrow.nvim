@@ -1,7 +1,5 @@
 local M = {}
 
-local config = require("arrow.config")
-
 function M.table_comp(o1, o2)
   local callList = {}
 
