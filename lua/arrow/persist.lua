@@ -4,6 +4,8 @@ local config = require("arrow.config")
 local git = require("arrow.git")
 local utils = require("arrow.utils")
 
+M.filenames = {}
+
 local function save_key()
   if config.separate_by_branch then
     local branch = git.refresh_git_branch()
@@ -36,9 +38,9 @@ end
 
 function M.save(filename)
   if not M.is_saved(filename) then
-    local new_table = vim.g.arrow_filenames
+    local new_table = M.filenames
     table.insert(new_table, filename)
-    vim.g.arrow_filenames = new_table
+    M.filenames = new_table
 
     M.cache_file()
     M.load_cache_file()
@@ -49,9 +51,9 @@ end
 function M.remove(filename)
   local index = M.is_saved(filename)
   if index then
-    local new_table = vim.g.arrow_filenames
+    local new_table = M.filenames
     table.remove(new_table, index)
-    vim.g.arrow_filenames = new_table
+    M.filenames = new_table
 
     M.cache_file()
     M.load_cache_file()
@@ -74,14 +76,14 @@ function M.toggle(filename)
 end
 
 function M.clear()
-  vim.g.arrow_filenames = {}
+  M.filenames = {}
   M.cache_file()
   M.load_cache_file()
   notify()
 end
 
 function M.is_saved(filename)
-  for i, name in ipairs(vim.g.arrow_filenames) do
+  for i, name in ipairs(M.filenames) do
     if name == filename then
       return i
     end
@@ -93,27 +95,27 @@ function M.load_cache_file()
   local cache_path = cache_file_path()
 
   if vim.fn.filereadable(cache_path) == 0 then
-    vim.g.arrow_filenames = {}
+    M.filenames = {}
 
     return
   end
 
   local success, data = pcall(vim.fn.readfile, cache_path)
   if success then
-    vim.g.arrow_filenames = data
+    M.filenames = data
   else
-    vim.g.arrow_filenames = {}
+    M.filenames = {}
   end
 end
 
 function M.cache_file()
-  local content = vim.fn.join(vim.g.arrow_filenames, "\n")
+  local content = vim.fn.join(M.filenames, "\n")
   local lines = vim.fn.split(content, "\n")
   vim.fn.writefile(lines, cache_file_path())
 end
 
 function M.go_to(index)
-  local filename = vim.g.arrow_filenames[index]
+  local filename = M.filenames[index]
 
   if not filename then
     return
@@ -128,7 +130,7 @@ function M.next()
   local current_index = M.is_saved(utils.get_current_buffer_path())
   local next_index
 
-  if current_index and current_index < #vim.g.arrow_filenames then
+  if current_index and current_index < #M.filenames then
     next_index = current_index + 1
   else
     next_index = 1
@@ -144,11 +146,11 @@ function M.previous()
   local previous_index
 
   if current_index and current_index == 1 then
-    previous_index = #vim.g.arrow_filenames
+    previous_index = #M.filenames
   elseif current_index then
     previous_index = current_index - 1
   else
-    previous_index = #vim.g.arrow_filenames
+    previous_index = #M.filenames
   end
 
   M.go_to(previous_index)
