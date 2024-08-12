@@ -131,7 +131,8 @@ function M.sync_buffer_bookmarks(bufnr)
       file:flush()
     end
 
-    M.last_sync_bookmarks[bufnr] = M.local_bookmarks[bufnr]
+    -- deep clone, otherwise they end up the same even if haven't synced!
+    M.last_sync_bookmarks[bufnr] = json.decode(json.encode(M.local_bookmarks[bufnr]))
     notify()
     return true
   end
