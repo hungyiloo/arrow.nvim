@@ -38,7 +38,7 @@ M.mappings = {
 
 M.index_keys = "123456789zcbnmZXVBNM,afghjklAFGHJKLwrtyuiopWRTYUIOP"
 
----@type table<string, fun(target_file_name: string, current_file_name: string)>
+---@type table<string, fun(target_file_name: string, current_file_name: string|nil)>
 M.actions = {
   open = function(filename)
     vim.cmd("edit " .. filename)

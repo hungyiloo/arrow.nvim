@@ -114,6 +114,9 @@ function M.get_current_buffer_path()
 end
 
 function M.get_buffer_path(bufnr)
+  if bufnr == nil then
+    return nil
+  end
   local bufname = vim.fn.bufname(bufnr)
   return vim.fn.fnamemodify(bufname, ":p")
 end

@@ -117,9 +117,11 @@ end
 
 -- Function to close the menu and open the selected file
 local function close_menu()
-  local win = vim.fn.win_getid()
-  vim.api.nvim_win_close(win, true)
-  is_menu_open = false
+  if is_menu_open then
+    local win = vim.fn.win_getid()
+    vim.api.nvim_win_close(win, true)
+    is_menu_open = false
+  end
 end
 
 local function get_file_icon(file_name)
@@ -299,8 +301,8 @@ local function create_menu_buffer()
 end
 
 -- handles user selection of a file in the arrow save list
-function M.open_file(fileNumber)
-  local filename = persist.filenames[fileNumber]
+function M.open_file(file_number)
+  local filename = persist.filenames[file_number]
 
   if selected_action == "delete_mode" then
     persist.remove(filename)

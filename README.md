@@ -115,11 +115,19 @@ For in-buffer bookmarks, map `function() require("arrow").open_bookmarks() end` 
 }
 ```
 
-You can also map previous and next key:
+You can also map more directly, instead of going through the Arrow menu UI, e.g.:
 
 ```lua
+-- direct opening of a numbered saved file
+vim.keymap.set("n", "g1", function() require("arrow").open(1) end)
+vim.keymap.set("n", "g2", function() require("arrow").open(2) end)
+vim.keymap.set("n", "g3", function() require("arrow").open(3) end)
+
+-- prev/next file in the save list
 vim.keymap.set("n", "H", function() require("arrow").prev_buffer() end)
 vim.keymap.set("n", "L", function() require("arrow").next_buffer() end)
+
+-- add current buffer into the save list
 vim.keymap.set("n", "<C-s>", function() require("arrow").save_current_buffer() end)
 ```
 

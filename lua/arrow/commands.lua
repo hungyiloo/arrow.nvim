@@ -6,19 +6,24 @@ local utils = require("arrow.utils")
 
 local M = {}
 
-function M.cmd(cmd)
+function M.cmd(cmd, args)
   cmd = (cmd ~= nil and cmd ~= "") and cmd or "open"
   local command = M.commands[cmd]
   if command then
-    command()
+    command(unpack(args))
   else
     M.error("Unknown arrow command: " .. cmd, { title = "Arrow" })
   end
 end
 
 M.commands = {
-  open = function()
-    ui.open_menu()
+  open = function(file_number) ---@type fun(file_number: string|integer|nil)
+    file_number = tonumber(file_number)
+    if file_number then
+      ui.open_file(file_number)
+    else
+      ui.open_menu()
+    end
   end,
   next_buffer = function()
     persist.next()
@@ -61,8 +66,8 @@ M.commands = {
 
 function M.setup()
   vim.api.nvim_create_user_command("Arrow", function(cmd)
-    local arrow_command = M.parse(cmd.args)
-    M.cmd(arrow_command)
+    local arrow_command, arrow_args = M.parse(cmd.args)
+    M.cmd(arrow_command, arrow_args)
   end, {
     nargs = "?",
     desc = "Arrow",
