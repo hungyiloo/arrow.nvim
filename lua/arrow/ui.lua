@@ -116,6 +116,7 @@ end
 local function close_menu()
   local win = vim.fn.win_getid()
   vim.api.nvim_win_close(win, true)
+  is_menu_open = false
 end
 
 local function get_file_icon(file_name)
@@ -280,6 +281,7 @@ local function create_menu_buffer(filename)
     buffer = menu_buf,
     desc = "Reenable cursor after leaving Arrow",
     callback = function()
+      close_menu()
       vim.cmd("highlight clear ArrowCursor")
       vim.schedule(function()
         vim.opt.guicursor:remove("a:ArrowCursor/ArrowCursor")
