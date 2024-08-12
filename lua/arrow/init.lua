@@ -1,5 +1,6 @@
 local M = {}
 
+local buffer_persist = require("arrow.buffer_persist")
 local commands = require("arrow.commands")
 local config = require("arrow.config")
 local git = require("arrow.git")
@@ -47,7 +48,28 @@ function M.setup(opts)
       git.refresh_git_branch()
       persist.load_cache_file()
     end,
-    desc = "load cache file on DirChanged",
+    desc = "load save list on directory change",
+    group = "arrow",
+  })
+
+  vim.api.nvim_create_autocmd({ "BufReadPost" }, {
+    callback = function()
+      buffer_persist.load_buffer_bookmarks()
+    end,
+    desc = "load current file bookmarks",
+    group = "arrow",
+  })
+
+  vim.api.nvim_create_autocmd({ "User" }, {
+    pattern = "LazyLoad",
+    callback = function(data)
+      if data.data == "arrow.nvim" then
+        for _, bufnr in pairs(vim.api.nvim_list_bufs()) do
+          buffer_persist.load_buffer_bookmarks(bufnr)
+        end
+      end
+    end,
+    desc = "load all open buffer bookmarks on lazy load",
     group = "arrow",
   })
 

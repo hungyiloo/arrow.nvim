@@ -293,7 +293,6 @@ end
 function M.get_window_config()
   local show_handbook = not config.hide_handbook
   local parsed_filenames = format_filenames(filenames)
-  local separate_save_and_remove = config.separate_save_and_remove
 
   -- Calculate the width of the window based on the max length of the
   -- filenames and the max length of the actions menu lines
