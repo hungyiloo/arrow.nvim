@@ -1,7 +1,7 @@
 local M = {}
 
 M.show_icons = true
-M.hide_handbook = false
+M.show_cheatsheet = true
 M.separate_by_branch = false
 M.separate_save_and_remove = false
 
@@ -34,6 +34,7 @@ M.mappings = {
   remove = "x",
   next_item = "]",
   prev_item = "[",
+  toggle_cheatsheet = "?",
 }
 
 M.index_keys = "123456789zcbnmZXVBNM,afghjklAFGHJKLwrtyuiopWRTYUIOP"

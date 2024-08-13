@@ -57,7 +57,7 @@ For in-buffer bookmarks, map `function() require("arrow").open_bookmarks() end` 
   show_icons = true,
   always_show_path = false,
   separate_by_branch = false, -- Bookmarks will be separated by git branch
-  hide_handbook = false, -- set to true to hide the shortcuts on menu.
+  show_cheatsheet = true, -- set to false to hide the shortcut guide on menu.
   save_path = function()
     return vim.fn.stdpath("cache") .. "/arrow"
   end,
@@ -69,7 +69,8 @@ For in-buffer bookmarks, map `function() require("arrow").open_bookmarks() end` 
     quit = "q",
     remove = "x", -- only used if separate_save_and_remove is true
     next_item = "]",
-    prev_item = "["
+    prev_item = "[",
+    toggle_cheatsheet = "?",
 
     -- custom actions mappings; names must match actions defined below
     ["Open Vertical"] = "v",

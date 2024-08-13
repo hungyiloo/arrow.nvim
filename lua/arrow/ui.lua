@@ -7,11 +7,16 @@ local M = {}
 
 local PADDING = 3
 
----@type integer|nil
-local caller_buf = nil
----@type string|nil
-local selected_action = nil
-local is_menu_open = false
+-- The buffer number that was open when Arrow was opened
+local caller_buf = nil ---@type integer|nil
+
+-- The buffer containing the Arrow menu UI.
+-- If nil, the menu isn't open
+local menu_buf = nil ---@type integer|nil
+
+-- The currently selected action (which is performed when a file is opened).
+-- If nil, the default action (open) will be performed
+local selected_action = nil ---@type string|nil
 
 local function max_mapping_key_length()
   local max_len = 0
@@ -59,6 +64,7 @@ local function get_actions_menu()
     string.format("%" .. pad .. "s Delete mode", mappings.delete_mode),
     string.format("%" .. pad .. "s Next Item", mappings.next_item),
     string.format("%" .. pad .. "s Prev Item", mappings.prev_item),
+    string.format("%" .. pad .. "s Toggle Cheatsheet", mappings.toggle_cheatsheet),
     string.format("%" .. pad .. "s Quit", mappings.quit),
   }
 
@@ -116,11 +122,11 @@ local function format_filenames(file_names)
 end
 
 -- Function to close the menu and open the selected file
-local function close_menu()
-  if is_menu_open then
+function M.close_menu()
+  if menu_buf then
     local win = vim.fn.win_getid()
     vim.api.nvim_win_close(win, true)
-    is_menu_open = false
+    menu_buf = nil
   end
 end
 
@@ -161,7 +167,11 @@ local function get_filenames_menu()
   return lines, to_highlight
 end
 
-local function render_highlights(menu_buf, to_highlight)
+local function render_highlights(to_highlight)
+  if not menu_buf then
+    return
+  end
+
   local actions_menu = get_actions_menu()
   local mappings = config.mappings
 
@@ -230,12 +240,16 @@ local function render_highlights(menu_buf, to_highlight)
   end
 end
 
-local function render_buffer(menu_buf)
+local function render_buffer()
+  if not menu_buf then
+    return
+  end
+
   vim.api.nvim_set_option_value("modifiable", true, { buf = menu_buf })
 
   -- Start building the buffer lines to render
   local lines = { "" }
-  local filenames_menu, to_highlight = get_filenames_menu()
+  local filenames_menu, filename_highlights = get_filenames_menu()
   local actions_menu = get_actions_menu()
 
   -- Add filenames to the menu
@@ -247,7 +261,7 @@ local function render_buffer(menu_buf)
   table.insert(lines, "")
 
   -- Add actions to the menu
-  if not config.hide_handbook then
+  if config.show_cheatsheet then
     for _, action in ipairs(actions_menu) do
       table.insert(lines, string.rep(" ", PADDING) .. action)
     end
@@ -267,11 +281,11 @@ local function render_buffer(menu_buf)
     end, { noremap = true, silent = true, buffer = menu_buf, nowait = true })
   end
 
-  render_highlights(menu_buf, to_highlight)
+  render_highlights(filename_highlights)
 end
 
 local function create_menu_buffer()
-  local menu_buf = vim.api.nvim_create_buf(false, true)
+  menu_buf = vim.api.nvim_create_buf(false, true)
 
   vim.api.nvim_create_autocmd("BufEnter", {
     buffer = menu_buf,
@@ -286,7 +300,7 @@ local function create_menu_buffer()
     buffer = menu_buf,
     desc = "Reenable cursor after leaving Arrow",
     callback = function()
-      close_menu()
+      M.close_menu()
       vim.cmd("highlight clear ArrowCursor")
       vim.schedule(function()
         vim.opt.guicursor:remove("a:ArrowCursor/ArrowCursor")
@@ -323,14 +337,12 @@ function M.open_file(file_number)
     end
 
     local caller_filename = utils.get_buffer_path(caller_buf)
-    close_menu()
+    M.close_menu()
     action(filename, caller_filename)
   end
 end
 
 function M.get_window_config()
-  local show_handbook = not config.hide_handbook
-
   -- Calculate the width of the window based on the max length of the
   -- filenames and the max length of the actions menu lines
   local width = 0
@@ -352,7 +364,7 @@ function M.get_window_config()
   width = width + PADDING * 2 -- add some padding
 
   local height = math.max(3, #persist.filenames + 2)
-  if show_handbook then
+  if config.show_cheatsheet then
     height = height + 1 + #actions_menu
   end
 
@@ -383,7 +395,7 @@ end
 
 ---@type fun(bufnr?: integer)
 function M.open_menu(bufnr)
-  if is_menu_open then
+  if menu_buf then
     return
   end
 
@@ -395,54 +407,54 @@ function M.open_menu(bufnr)
   end
 
   local filename = utils.get_buffer_path(caller_buf)
-  local menu_buf = create_menu_buffer()
+  menu_buf = create_menu_buffer()
   local window_config = M.get_window_config()
   local win = vim.api.nvim_open_win(menu_buf, true, window_config)
-  is_menu_open = true
 
   local mappings = config.mappings
   local separate_save_and_remove = config.separate_save_and_remove
   local menu_keymap_opts = { noremap = true, silent = true, buffer = menu_buf, nowait = true }
 
-  vim.keymap.set("n", mappings.quit, close_menu, menu_keymap_opts)
+  vim.keymap.set("n", mappings.quit, M.close_menu, menu_keymap_opts)
+  vim.keymap.set("n", mappings.toggle_cheatsheet, M.toggle_cheatsheet, menu_keymap_opts)
   vim.keymap.set("n", mappings.edit, function()
-    close_menu()
+    M.close_menu()
     persist.open_cache_file_editor()
   end, menu_keymap_opts)
 
   if separate_save_and_remove then
     vim.keymap.set("n", mappings.toggle, function()
       persist.save(filename)
-      close_menu()
+      M.close_menu()
     end, menu_keymap_opts)
 
     vim.keymap.set("n", mappings.remove, function()
       persist.remove(filename)
-      close_menu()
+      M.close_menu()
     end, menu_keymap_opts)
   else
     vim.keymap.set("n", mappings.toggle, function()
       persist.toggle(filename)
-      close_menu()
+      M.close_menu()
     end, menu_keymap_opts)
   end
 
   vim.keymap.set("n", mappings.clear_all_items, function()
     persist.clear()
-    close_menu()
+    M.close_menu()
   end, menu_keymap_opts)
 
   vim.keymap.set("n", mappings.next_item, function()
-    close_menu()
+    M.close_menu()
     persist.next()
   end, menu_keymap_opts)
 
   vim.keymap.set("n", mappings.prev_item, function()
-    close_menu()
+    M.close_menu()
     persist.previous()
   end, menu_keymap_opts)
 
-  vim.keymap.set("n", "<Esc>", close_menu, menu_keymap_opts)
+  vim.keymap.set("n", "<Esc>", M.close_menu, menu_keymap_opts)
 
   vim.keymap.set("n", mappings.delete_mode, function()
     if selected_action == "delete_mode" then
@@ -473,7 +485,7 @@ function M.open_menu(bufnr)
     desc = "Cleanup Arrow state after closing UI",
     once = true,
     callback = function()
-      is_menu_open = false
+      menu_buf = nil
       caller_buf = nil
     end,
   })
@@ -484,5 +496,14 @@ function M.open_menu(bufnr)
   vim.api.nvim_set_current_win(win)
 end
 
--- Command to trigger the menu
+function M.toggle_cheatsheet()
+  config.show_cheatsheet = not config.show_cheatsheet
+
+  -- we can't just rerender, because the window size might change
+  M.close_menu()
+  vim.schedule(function()
+    M.open_menu()
+  end)
+end
+
 return M
