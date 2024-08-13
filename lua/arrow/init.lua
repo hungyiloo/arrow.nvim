@@ -8,6 +8,14 @@ local persist = require("arrow.persist")
 local save_keys = require("arrow.save_keys")
 local utils = require("arrow.utils")
 
+local function set_opt(opt, fallback)
+  if opt ~= nil then
+    return opt
+  else
+    return fallback
+  end
+end
+
 function M.setup(opts)
   vim.cmd("highlight default link ArrowFileIndex CursorLineNr")
   vim.cmd("highlight default link ArrowCurrentFile Special")
@@ -23,15 +31,14 @@ function M.setup(opts)
   ---@type table<string, fun(target_file_name: string, current_file_name: string)>
   config.actions = utils.join_two_keys_tables(config.actions, opts.actions or {})
 
-  config.save_path = opts.save_path or config.save_path
-  config.always_show_path = opts.always_show_path ~= nil and opts.always_show_path or config.always_show_path
-  config.show_icons = opts.show_icons ~= nil and opts.show_icons or config.show_icons
-  config.index_keys = opts.index_keys ~= nil and opts.index_keys or config.index_keys
-  config.show_cheatsheet = opts.show_cheatsheet ~= nil and opts.show_cheatsheet or config.show_cheatsheet
-  config.separate_by_branch = opts.separate_by_branch ~= nil and opts.separate_by_branch or config.separate_by_branch
-  config.separate_save_and_remove = opts.separate_save_and_remove ~= nil and opts.separate_save_and_remove
-    or config.separate_save_and_remove
-  config.save_key = opts.save_key ~= nil and (save_keys[opts.save_key] or opts.save_key) or config.save_key
+  config.save_path = set_opt(opts.save_path, config.save_path)
+  config.always_show_path = set_opt(opts.always_show_path, config.always_show_path)
+  config.show_icons = set_opt(opts.show_icons, config.show_icons)
+  config.index_keys = set_opt(opts.index_keys, config.index_keys)
+  config.show_cheatsheet = set_opt(opts.show_cheatsheet, config.show_cheatsheet)
+  config.separate_by_branch = set_opt(opts.separate_by_branch, config.separate_by_branch)
+  config.separate_save_and_remove = set_opt(opts.separate_save_and_remove, config.separate_save_and_remove)
+  config.save_key = set_opt((save_keys[opts.save_key] or opts.save_key), config.save_key)
 
   if config.per_buffer_config.satellite then
     require("arrow.integration.satellite")
