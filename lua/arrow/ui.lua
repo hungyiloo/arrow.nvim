@@ -61,7 +61,7 @@ local function get_actions_menu()
   local menu_lines = {
     string.format("%" .. pad .. "s Edit Arrow File", mappings.edit),
     string.format("%" .. pad .. "s Clear All Items", mappings.clear_all_items),
-    string.format("%" .. pad .. "s Delete mode", mappings.delete_mode),
+    string.format("%" .. pad .. "s Delete Mode", mappings.delete_mode),
     string.format("%" .. pad .. "s Next Item", mappings.next_item),
     string.format("%" .. pad .. "s Prev Item", mappings.prev_item),
     string.format("%" .. pad .. "s Toggle Cheatsheet", mappings.toggle_cheatsheet),

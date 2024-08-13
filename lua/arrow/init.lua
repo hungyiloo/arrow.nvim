@@ -27,7 +27,7 @@ function M.setup(opts)
   config.always_show_path = opts.always_show_path ~= nil and opts.always_show_path or config.always_show_path
   config.show_icons = opts.show_icons ~= nil and opts.show_icons or config.show_icons
   config.index_keys = opts.index_keys ~= nil and opts.index_keys or config.index_keys
-  config.show_cheatsheet = opts.hide_cheatsheet ~= nil and opts.hide_cheatsheet or config.show_cheatsheet
+  config.show_cheatsheet = opts.show_cheatsheet ~= nil and opts.show_cheatsheet or config.show_cheatsheet
   config.separate_by_branch = opts.separate_by_branch ~= nil and opts.separate_by_branch or config.separate_by_branch
   config.separate_save_and_remove = opts.separate_save_and_remove ~= nil and opts.separate_save_and_remove
     or config.separate_save_and_remove
