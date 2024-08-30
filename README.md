@@ -1,8 +1,9 @@
 # arrow.nvim
 
-> [!WARNING] 
-> A wild fork has appeared!
-> This is a personal fork of the original [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim). To fix Windows compatibility and a whole raft of bugs, I made sweeping changes
+> [!TIP] 
+> This is a fork of the [arrow.nvim](https://github.com/otavioschwanck/arrow.nvim). To fix Windows compatibility and general bugginess, I made sweeping changes to the code and configuration, including implementing some feature requests from other users.
+>
+> Big thanks to the original maintainer, [Otávio Schwanck dos Santos](https://github.com/otavioschwanck)
 
 Arrow.nvim is a plugin made to quickly locate files (like harpoon) using a single UI and single keymap. 
 
