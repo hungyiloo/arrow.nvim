@@ -79,7 +79,7 @@ function M.load_buffer_bookmarks(bufnr)
   else
     local f = assert(io.open(path, "rb"))
 
-    local content = f:read("*all")
+		local content = f:read("a")
 
     f:close()
 
@@ -129,6 +129,7 @@ function M.sync_buffer_bookmarks(bufnr)
     if file then
       file:write(json.encode(M.local_bookmarks[bufnr]))
       file:flush()
+      file:close()
     end
 
     -- deep clone, otherwise they end up the same even if haven't synced!

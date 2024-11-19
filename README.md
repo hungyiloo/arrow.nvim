@@ -23,6 +23,11 @@ Arrow also provides per buffer bookmarks that let you quickly jump around a file
 ```lua
 return {
   "hungyiloo/arrow.nvim",
+  dependencies = {
+    { "nvim-tree/nvim-web-devicons" },
+    -- or if using `mini.icons`
+    -- { "echasnovski/mini.icons" },
+  },
   opts = {
     show_icons = true,
   },
@@ -112,7 +117,7 @@ For in-buffer bookmarks, map `function() require("arrow").open_bookmarks() end` 
   },
   separate_save_and_remove = false, -- if true, will remove the toggle and create the save/remove keymaps.
   leader_key = ";",
-  save_key = "cwd", -- what will be used as root to save the bookmarks. Can be also `git_root` or `global`.
+  save_key = "cwd", -- what will be used as root to save the bookmarks. Can be also `git_root` or `git_root_bare` or `global`.
   index_keys = "123456789zxcbnmZXVBNM,afghjklAFGHJKLwrtyuiopWRTYUIOP", -- keys mapped to bookmark index, i.e. 1st bookmark will be accessible by 1, and 12th - by c
 }
 ```

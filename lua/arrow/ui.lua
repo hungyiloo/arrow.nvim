@@ -1,7 +1,8 @@
 local config = require("arrow.config")
-local git = require("arrow.git")
 local persist = require("arrow.persist")
 local utils = require("arrow.utils")
+local git = require("arrow.git")
+local icons = require("arrow.integration.icons")
 
 local M = {}
 
@@ -133,21 +134,8 @@ function M.close_menu()
   end
 end
 
----@type fun(file_name: string): string, string
-local function get_file_icon(file_name)
-  if vim.fn.isdirectory(file_name) == 1 then
-    return "", "Normal"
-  end
-
-  local webdevicons = require("nvim-web-devicons")
-  local extension = vim.fn.fnamemodify(file_name, ":e")
-  local icon, hl_group = webdevicons.get_icon(file_name, extension, { default = true })
-  return icon, hl_group
-end
-
 -- Builds the save list menu content
 local function build_file_menu_content()
-  local icons = config.show_icons
   local lines = {}
   local to_highlight = {} ---@type string[]
 
@@ -156,8 +144,8 @@ local function build_file_menu_content()
   for i, file_name in ipairs(formatted_filenames) do
     local index_key = config.index_keys:sub(i, i)
 
-    if icons then
-      local icon, hl_group = get_file_icon(persist.filenames[i])
+    if config.show_icons then
+      local icon, hl_group = icons.get_file_icon(persist.filenames[i])
       to_highlight[i] = hl_group
       file_name = icon .. " " .. file_name
     end
