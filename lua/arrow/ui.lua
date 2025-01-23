@@ -399,7 +399,7 @@ function M.open_menu()
   git.refresh_git_branch()
   caller_buf = vim.api.nvim_get_current_buf()
 
-  if persist.filenames == 0 then
+  if #persist.filenames == 0 then
     persist.load_cache_file()
   end
 
