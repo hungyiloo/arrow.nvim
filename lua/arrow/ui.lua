@@ -315,8 +315,6 @@ function M.open_file(file_number)
     return
   end
 
-  filename = vim.fn.fnameescape(filename)
-
   if selected_action == "delete_mode" then
     -- special logic when in delete mode
     persist.remove(filename)
